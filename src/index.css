@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: var(--color-emerald-500);
+  --color-primary-dark: var(--color-emerald-600);
+  --color-primary-light: var(--color-emerald-400);
+  
+  --color-secondary: var(--color-slate-500);
+  
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+}
+
+@layer base {
+  body {
+    @apply bg-zinc-950 text-zinc-100 antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+.glass {
+  background-color: rgba(24, 24, 27, 0.5);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(39, 39, 42, 0.5);
+}
+
+.glass-card {
+  @apply rounded-xl overflow-hidden transition-all duration-300;
+  background-color: rgba(24, 24, 27, 0.5);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(39, 39, 42, 0.5);
+}
+
+.glass-card:hover {
+  background-color: rgba(24, 24, 27, 0.6);
+  border-color: rgba(63, 63, 70, 0.5);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-zinc-950;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-zinc-800 rounded-full hover:bg-zinc-700;
+}
