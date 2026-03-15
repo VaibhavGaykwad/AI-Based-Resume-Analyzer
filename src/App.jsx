@@ -5,6 +5,8 @@ import { UploadView } from './views/UploadView';
 import { ResultsView } from './views/ResultsView';
 import { AnalyticsView } from './views/AnalyticsView';
 import { AuthView } from './views/AuthView';
+import { ProfileView } from './views/ProfileView';
+import { SettingsView } from './views/SettingsView';
 import { AnalysisHistory } from './components/AnalysisHistory';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -85,6 +87,12 @@ function App() {
       )}
       {activeView === 'history' && (
         <AnalysisHistory user={user} onSelectAnalysis={handleSelectHistoricalAnalysis} />
+      )}
+      {activeView === 'profile' && (
+        <ProfileView user={user} />
+      )}
+      {activeView === 'settings' && (
+        <SettingsView />
       )}
     </Layout>
   );

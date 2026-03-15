@@ -7,7 +7,10 @@ export const Layout = ({ children, activeView, onViewChange, user }) => {
   const viewTitles = {
     upload: 'Resume Analysis',
     results: 'Analysis Results',
-    analytics: 'Analytics Overview'
+    analytics: 'Analytics Overview',
+    history: 'Analysis History',
+    profile: 'My Profile',
+    settings: 'Settings'
   };
 
   return (

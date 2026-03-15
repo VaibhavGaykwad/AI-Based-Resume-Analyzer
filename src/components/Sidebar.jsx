@@ -75,8 +75,8 @@ export const Sidebar = ({ activeView, onViewChange, user }) => {
             <p className="text-zinc-200 font-medium truncate">{user?.email}</p>
           </div>
         </div>
-        <NavItem icon={User} label="Profile" active={false} onClick={() => {}} />
-        <NavItem icon={Settings} label="Settings" active={false} onClick={() => {}} />
+        <NavItem icon={User} label="Profile" active={activeView === 'profile'} onClick={() => onViewChange('profile')} />
+        <NavItem icon={Settings} label="Settings" active={activeView === 'settings'} onClick={() => onViewChange('settings')} />
         <button 
           onClick={handleSignOut}
           className="flex items-center w-full gap-3 px-4 py-3 text-zinc-500 hover:text-red-400 transition-colors mt-2 group"
