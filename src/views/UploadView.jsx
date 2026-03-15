@@ -3,24 +3,50 @@ import { UploadZone } from '../components/UploadZone';
 import { ScanningProgress } from '../components/ScanningProgress';
 import { motion, AnimatePresence } from 'framer-motion';
 import { extractTextFromPDF, analyzeResume } from '../utils/resumeAnalyzer';
-import { AlertCircle } from 'lucide-react';
+import { uploadPDF } from '../utils/firebaseStorage';
+import { saveAnalysis } from '../utils/firestoreService';
+import { AlertCircle, FileText, Search, Cpu, Sparkles, CheckCircle2, Database } from 'lucide-react';
 
-export const UploadView = ({ onAnalysisComplete }) => {
+const ANALYSIS_STEPS = [
+  { id: 1, label: 'Reading PDF content...', icon: FileText },
+  { id: 2, label: 'Extracting semantic structure...', icon: Search },
+  { id: 3, label: 'Identifying technical skills...', icon: Cpu },
+  { id: 4, label: 'Comparing with industry benchmarks...', icon: Sparkles },
+  { id: 5, label: 'Generating performance score...', icon: CheckCircle2 },
+  { id: 6, label: 'Saving to database...', icon: Database },
+];
+
+export const UploadView = ({ onAnalysisComplete, user }) => {
   const [status, setStatus] = useState('idle'); // idle | scanning | error
   const [uploadedFile, setUploadedFile] = useState(null);
   const [error, setError] = useState(null);
+  const [saveWarning, setSaveWarning] = useState(null);
 
   const handleUploadStart = (file) => {
     setUploadedFile(file);
     setStatus('scanning');
     setError(null);
+    setSaveWarning(null);
   };
 
   const handleAnalysisComplete = async () => {
     try {
+      // Step 1-5: Extract text and run Gemini analysis
       const text = await extractTextFromPDF(uploadedFile);
       const results = await analyzeResume(text);
-      onAnalysisComplete(results);
+
+      // Step 6: Save to Firestore (non-fatal)
+      try {
+        if (user) {
+          // Note: Skipping PDF Storage upload to keep the app on the Firebase free tier
+          await saveAnalysis(user.uid, uploadedFile.name, '', results);
+        }
+      } catch (saveErr) {
+        console.warn('Could not save to database:', saveErr);
+        setSaveWarning('Analysis complete, but we couldn\'t save it to your history. Check your connection or Firestore setup.');
+      }
+
+      onAnalysisComplete({ data: results, fileName: uploadedFile.name });
     } catch (err) {
       console.error('Analysis failed:', err);
       setError(err.message || 'Failed to analyze resume. Please try again.');
@@ -30,6 +56,28 @@ export const UploadView = ({ onAnalysisComplete }) => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh]">
+      {/* Non-blocking save warning banner */}
+      <AnimatePresence>
+        {saveWarning && (
+          <motion.div
+            key="save-warning"
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            className="w-full max-w-xl mb-4 flex items-start gap-3 px-4 py-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300 text-sm"
+          >
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-amber-400" />
+            <span>{saveWarning}</span>
+            <button
+              onClick={() => setSaveWarning(null)}
+              className="ml-auto text-amber-500 hover:text-amber-300 font-bold text-xs shrink-0"
+            >
+              ✕
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence mode="wait">
         {status === 'idle' && (
           <motion.div
@@ -42,7 +90,7 @@ export const UploadView = ({ onAnalysisComplete }) => {
           >
             <div className="text-center mb-12">
               <h1 className="text-4xl font-extrabold text-zinc-100 mb-4 tracking-tight">
-                Unlock your <span className="text-emerald-500">Career Potential</span>
+                Unlock your <span className="text-primary font-black italic">Career Potential</span>
               </h1>
               <p className="text-zinc-500 text-lg max-w-xl mx-auto">
                 Upload your resume and let our advanced AI analyze it against industry standards in seconds.
@@ -60,7 +108,11 @@ export const UploadView = ({ onAnalysisComplete }) => {
             exit={{ opacity: 0 }}
             className="w-full"
           >
-            <ScanningProgress onComplete={handleAnalysisComplete} />
+            <ScanningProgress
+              onComplete={handleAnalysisComplete}
+              steps={ANALYSIS_STEPS}
+              totalDuration={10000}
+            />
           </motion.div>
         )}
 

@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: var(--color-emerald-500);
-  --color-primary-dark: var(--color-emerald-600);
-  --color-primary-light: var(--color-emerald-400);
+  --color-primary: #c5a059;
+  --color-primary-dark: #a25b2a;
+  --color-primary-light: #e2c284;
   
-  --color-secondary: var(--color-slate-500);
+  --color-secondary: var(--color-zinc-500);
   
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;

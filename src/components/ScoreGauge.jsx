@@ -8,13 +8,13 @@ export const ScoreGauge = ({ score }) => {
   const offset = circumference - (score / 100) * circumference;
 
   const getColor = (score) => {
-    if (score >= 80) return 'text-emerald-500';
+    if (score >= 80) return 'text-primary';
     if (score >= 50) return 'text-amber-500';
     return 'text-red-500';
   };
 
   const getBorderColor = (score) => {
-    if (score >= 80) return 'stroke-emerald-500';
+    if (score >= 80) return 'stroke-primary';
     if (score >= 50) return 'stroke-amber-500';
     return 'stroke-red-500';
   };
@@ -27,7 +27,7 @@ export const ScoreGauge = ({ score }) => {
           cx="96"
           cy="96"
           r={radius}
-          className="stroke-zinc-800 fill-none"
+          className="stroke-zinc-900 fill-none"
           strokeWidth="12"
         />
         {/* Progress Circle */}
@@ -50,17 +50,17 @@ export const ScoreGauge = ({ score }) => {
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5 }}
-          className={cn("text-5xl font-black tracking-tighter", getColor(score))}
+          className={cn("text-5xl font-[900] tracking-tighter italic", getColor(score))}
         >
           {score}
         </motion.span>
-        <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-zinc-500 mt-1">Overall Score</span>
+        <span className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-600 mt-1 italic">ATS Score</span>
       </div>
 
       {/* Glow Effect */}
       <div className={cn(
         "absolute inset-0 rounded-full blur-3xl opacity-20 -z-10",
-        score >= 80 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-red-500"
+        score >= 80 ? "bg-primary" : score >= 50 ? "bg-amber-500" : "bg-red-500"
       )} />
     </div>
   );

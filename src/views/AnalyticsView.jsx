@@ -7,12 +7,12 @@ import { Users, TrendingUp, Award, Clock } from 'lucide-react';
 import { cn } from '../utils/cn';
 
 const skillData = [
-  { name: 'React', count: 145, color: '#10b981' },
-  { name: 'Node.js', count: 112, color: '#10b981' },
-  { name: 'TypeScript', count: 98, color: '#10b981' },
-  { name: 'Python', count: 86, color: '#10b981' },
-  { name: 'AWS', count: 74, color: '#10b981' },
-  { name: 'Docker', count: 52, color: '#10b981' },
+  { name: 'React', count: 145, color: '#c5a059' },
+  { name: 'Node.js', count: 112, color: '#a25b2a' },
+  { name: 'TypeScript', count: 98, color: '#c5a059' },
+  { name: 'Python', count: 86, color: '#a25b2a' },
+  { name: 'AWS', count: 74, color: '#c5a059' },
+  { name: 'Docker', count: 52, color: '#a25b2a' },
 ];
 
 const scoreTrendData = [
@@ -25,15 +25,15 @@ const scoreTrendData = [
 ];
 
 const StatCard = ({ icon: Icon, label, value, trend, color }) => (
-  <div className="glass-card p-6 flex items-center justify-between border border-zinc-800/50">
+  <div className="glass-card p-6 flex items-center justify-between border border-zinc-800/50 hover:border-primary/30 transition-colors group">
     <div>
-      <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-widest mb-1">{label}</p>
+      <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-[0.2em] mb-1">{label}</p>
       <div className="flex items-baseline gap-2">
         <h4 className="text-3xl font-black text-zinc-100 italic tracking-tighter">{value}</h4>
-        {trend && <span className="text-xs font-bold text-emerald-500">{trend}</span>}
+        {trend && <span className="text-[10px] font-black text-primary uppercase tracking-widest">{trend}</span>}
       </div>
     </div>
-    <div className={cn("p-4 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-xl", color)}>
+    <div className={cn("p-4 rounded-2xl bg-[#0d0d0f] border border-zinc-800 shadow-xl group-hover:border-primary/30 transition-all", color)}>
       <Icon className="w-6 h-6" />
     </div>
   </div>
@@ -42,9 +42,9 @@ const StatCard = ({ icon: Icon, label, value, trend, color }) => (
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-zinc-900 border border-zinc-800 p-3 rounded-lg shadow-2xl backdrop-blur-md">
-        <p className="text-xs font-bold text-zinc-300 uppercase tracking-widest mb-1">{label}</p>
-        <p className="text-lg font-black text-emerald-500 italic">{payload[0].value}</p>
+      <div className="bg-[#0d0d0f] border border-primary/20 p-4 rounded-xl shadow-2xl backdrop-blur-md">
+        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">{label}</p>
+        <p className="text-xl font-black text-primary italic tracking-tight">{payload[0].value}</p>
       </div>
     );
   }
@@ -61,26 +61,26 @@ export const AnalyticsView = () => {
           label="Total Analyzed" 
           value="1,284" 
           trend="+12%" 
-          color="text-emerald-500"
+          color="text-primary"
         />
         <StatCard 
           icon={TrendingUp} 
           label="Avg. Score" 
           value="76.4" 
           trend="+5.2" 
-          color="text-emerald-400"
+          color="text-primary-light"
         />
         <StatCard 
           icon={Award} 
           label="Top percentile" 
           value="82nd" 
-          color="text-amber-500"
+          color="text-primary"
         />
         <StatCard 
           icon={Clock} 
           label="Avg. Time" 
           value="8.2s" 
-          color="text-zinc-400"
+          color="text-zinc-500"
         />
       </div>
 
@@ -100,17 +100,17 @@ export const AnalyticsView = () => {
                   type="category" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#71717a', fontSize: 12, fontWeight: 700 }}
+                  tick={{ fill: '#71717a', fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}
                   width={100}
                 />
-                <Tooltip cursor={{ fill: 'transparent' }} content={<CustomTooltip />} />
+                <Tooltip cursor={{ fill: 'rgba(197, 160, 89, 0.05)' }} content={<CustomTooltip />} />
                 <Bar 
                   dataKey="count" 
                   radius={[0, 10, 10, 0]} 
-                  barSize={20}
+                  barSize={16}
                 >
                   {skillData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={index === 0 ? '#10b981' : '#27272a'} />
+                    <Cell key={`cell-${index}`} fill={index === 0 ? '#c5a059' : '#1e1e21'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -129,16 +129,16 @@ export const AnalyticsView = () => {
               <AreaChart data={scoreTrendData}>
                 <defs>
                   <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#c5a059" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#c5a059" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#18181b" />
                 <XAxis 
                   dataKey="month" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#71717a', fontSize: 12, fontWeight: 700 }}
+                  tick={{ fill: '#71717a', fontSize: 11, fontWeight: 900 }}
                   dy={10}
                 />
                 <YAxis 
@@ -149,7 +149,7 @@ export const AnalyticsView = () => {
                 <Area 
                   type="monotone" 
                   dataKey="score" 
-                  stroke="#10b981" 
+                  stroke="#c5a059" 
                   strokeWidth={4}
                   fillOpacity={1} 
                   fill="url(#colorScore)" 
@@ -161,15 +161,15 @@ export const AnalyticsView = () => {
         </div>
       </div>
 
-      <div className="p-8 rounded-2xl bg-gradient-to-tr from-emerald-600 to-emerald-400 shadow-2xl flex items-center justify-between group overflow-hidden relative">
+      <div className="p-10 rounded-3xl bg-gradient-to-tr from-primary-dark to-primary shadow-2xl flex items-center justify-between group overflow-hidden relative">
         <div className="absolute inset-0 bg-black/10 transition-transform duration-700 group-hover:scale-110" />
         <div className="relative z-10">
-          <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-2">Ready to surpass the benchmark?</h2>
-          <p className="text-emerald-50 text-sm max-w-md font-medium opacity-90">
-            Based on your aggregate history, you are in the top 18% of developers. Targeted improvements could land you in the top 5%.
+          <h2 className="text-3xl font-black text-[#0d0d0f] italic uppercase tracking-tighter mb-2">Ready to surpass the benchmark?</h2>
+          <p className="text-[#0d0d0f]/70 text-sm max-w-md font-bold italic">
+            Based on your aggregate history, you are in the top 18% of candidates. Targeted improvements could land you in the top 5%.
           </p>
         </div>
-        <button className="relative z-10 bg-white text-emerald-600 font-black px-8 py-3 rounded-xl uppercase tracking-widest text-xs shadow-xl transition-all hover:scale-105 active:scale-95">
+        <button className="relative z-10 bg-[#0d0d0f] text-white font-[1000] px-8 py-4 rounded-xl uppercase tracking-[0.2em] text-[10px] shadow-2xl transition-all hover:scale-105 active:scale-95">
           Get Career Roadmap
         </button>
       </div>

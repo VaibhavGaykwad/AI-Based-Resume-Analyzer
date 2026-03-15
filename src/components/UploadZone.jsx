@@ -1,11 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { Upload, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export const UploadZone = ({ onUploadStart, onUploadComplete }) => {
+export const UploadZone = ({ onUploadStart }) => {
   const [isDragging, setIsDragging] = useState(false);
-  const [file, setFile] = useState(null);
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
 
@@ -36,7 +35,6 @@ export const UploadZone = ({ onUploadStart, onUploadComplete }) => {
     setIsDragging(false);
     const droppedFile = e.dataTransfer.files[0];
     if (droppedFile && validateFile(droppedFile)) {
-      setFile(droppedFile);
       startAnalysis(droppedFile);
     }
   };
@@ -44,7 +42,6 @@ export const UploadZone = ({ onUploadStart, onUploadComplete }) => {
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile && validateFile(selectedFile)) {
-      setFile(selectedFile);
       startAnalysis(selectedFile);
     }
   };
@@ -60,10 +57,10 @@ export const UploadZone = ({ onUploadStart, onUploadComplete }) => {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={cn(
-          "relative group cursor-pointer rounded-2xl border-2 border-dashed transition-all duration-300 flex flex-col items-center justify-center p-12 min-h-[350px] overflow-hidden",
+          "relative group cursor-pointer rounded-[2.5rem] border border-zinc-800/50 transition-all duration-500 flex flex-col items-center justify-center p-12 min-h-[380px] overflow-hidden bg-[#0d0d0f]",
           isDragging
-            ? "border-emerald-500 bg-emerald-500/5 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
-            : "border-zinc-800 bg-zinc-900/40 hover:border-zinc-700 hover:bg-zinc-900/60"
+            ? "border-primary/40 bg-primary/5 shadow-[0_0_40px_rgba(197,160,89,0.05)]"
+            : "hover:border-primary/20 hover:bg-zinc-900/40"
         )}
         onClick={() => fileInputRef.current?.click()}
       >
@@ -75,36 +72,41 @@ export const UploadZone = ({ onUploadStart, onUploadComplete }) => {
           className="hidden"
         />
 
-        {/* Decorative Background Elements */}
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-700" />
+        {/* Subtle radial glow matching image */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(197,160,89,0.03),transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
 
-        <div className="w-20 h-20 rounded-2xl bg-zinc-800/80 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-xl border border-zinc-700/50">
-          <Upload className={cn("w-10 h-10 transition-colors", isDragging ? "text-emerald-500" : "text-zinc-500 group-hover:text-emerald-400")} />
+        <div className="w-24 h-24 rounded-3xl bg-[#1a1a1c] flex items-center justify-center mb-8 group-hover:scale-105 transition-transform duration-500 shadow-2xl border border-zinc-800/80 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />
+          <Upload className={cn("w-10 h-10 transition-colors", isDragging ? "text-primary" : "text-zinc-500 group-hover:text-primary")} />
         </div>
 
-        <h3 className="text-xl font-bold text-zinc-100 mb-2">Upload your resume</h3>
-        <p className="text-zinc-500 text-center max-w-xs mb-8 leading-relaxed">
-          Drag and drop your PDF here, or <span className="text-emerald-500 font-semibold group-hover:underline">browse files</span>
+        <h3 className="text-2xl font-bold text-zinc-100 mb-2 tracking-tight">Upload your resume</h3>
+        <p className="text-zinc-500 text-center max-w-xs mb-10 leading-relaxed font-medium">
+          Drag and drop your PDF here, or <span className="text-primary font-bold hover:underline">browse files</span>
         </p>
 
-        <div className="flex items-center gap-6 px-4 py-2 bg-zinc-950/50 rounded-full border border-zinc-800 text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-            PDF Format only
+        <div className="flex items-center gap-6 px-6 py-3 bg-[#09090b] rounded-2xl border border-zinc-800/80 text-[10px] font-black text-zinc-400 uppercase tracking-[0.15em] shadow-inner">
+          <div className="flex items-center gap-2.5">
+            <div className="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+               <CheckCircle2 className="w-2.5 h-2.5 text-primary" />
+            </div>
+            PDF FORMAT ONLY
           </div>
           <div className="w-1 h-1 rounded-full bg-zinc-800" />
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-            Max size: 10MB
+          <div className="flex items-center gap-2.5">
+            <div className="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 text-primary">
+               <CheckCircle2 className="w-2.5 h-2.5" />
+            </div>
+            MAX SIZE: 10MB
           </div>
         </div>
 
         <AnimatePresence>
           {error && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
               className="absolute bottom-6 flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm"
             >
               <AlertCircle className="w-4 h-4" />
@@ -120,14 +122,14 @@ export const UploadZone = ({ onUploadStart, onUploadComplete }) => {
         </AnimatePresence>
       </div>
 
-      <div className="mt-8 flex items-center justify-between px-2">
+      <div className="mt-12 flex items-center justify-between px-6 opacity-60">
         <div className="flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-amber-500" />
-          <span className="text-sm text-zinc-500">Wait time: ~10 seconds</span>
+          <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(197,160,89,0.5)]" />
+          <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">Wait time: ~10 seconds</span>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span className="text-sm text-zinc-500">99.9% Accuracy</span>
+          <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(197,160,89,0.5)]" />
+          <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">99.9% Accuracy</span>
         </div>
       </div>
     </div>

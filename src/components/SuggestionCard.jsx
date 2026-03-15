@@ -7,40 +7,42 @@ export const SuggestionCard = ({ suggestion }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const icons = {
-    High: <AlertTriangle className="w-5 h-5 text-red-400" />,
-    Medium: <Info className="w-5 h-5 text-amber-400" />,
-    Low: <CheckCircle className="w-5 h-5 text-emerald-400" />
+    High: <AlertTriangle className="w-5 h-5 text-red-500" />,
+    Medium: <Info className="w-5 h-5 text-amber-500" />,
+    Low: <CheckCircle className="w-5 h-5 text-primary" />
   };
 
   const impactColors = {
-    High: "text-red-400 bg-red-400/10 border-red-400/20",
-    Medium: "text-amber-400 bg-amber-400/10 border-amber-400/20",
-    Low: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20"
+    High: "text-red-500 bg-red-500/10 border-red-500/20",
+    Medium: "text-amber-500 bg-amber-500/10 border-amber-500/20",
+    Low: "text-primary bg-primary/10 border-primary/20"
   };
 
   return (
     <div className={cn(
-      "glass-card border border-zinc-800/50 bg-zinc-900/20 hover:bg-zinc-900/40 transition-all duration-300",
-      isExpanded ? "ring-1 ring-emerald-500/30" : ""
+      "glass-card border border-zinc-800/50 bg-[#0d0d0f]/20 hover:bg-zinc-900/40 transition-all duration-300",
+      isExpanded ? "ring-2 ring-primary/20 bg-[#0d0d0f]/40" : ""
     )}>
       <button 
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-5 text-left transition-colors"
+        className="w-full flex items-center justify-between p-6 text-left transition-colors"
       >
         <div className="flex items-center gap-4">
-          <div className={cn("p-2 rounded-lg border", impactColors[suggestion.impact])}>
+          <div className={cn("p-2 rounded-xl border", impactColors[suggestion.impact])}>
             {icons[suggestion.impact]}
           </div>
           <div>
-            <h4 className="font-semibold text-zinc-100">{suggestion.title}</h4>
+            <h4 className="font-bold text-zinc-100 tracking-tight">{suggestion.title}</h4>
             <div className="flex items-center gap-2 mt-1">
-              <span className={cn("text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded", impactColors[suggestion.impact])}>
+              <span className={cn("text-[9px] uppercase font-black tracking-[0.15em] px-2 py-0.5 rounded", impactColors[suggestion.impact])}>
                 {suggestion.impact} Impact
               </span>
             </div>
           </div>
         </div>
-        {isExpanded ? <ChevronUp className="w-5 h-5 text-zinc-500" /> : <ChevronDown className="w-5 h-5 text-zinc-500" />}
+        <div className={cn("w-8 h-8 rounded-full flex items-center justify-center transition-colors", isExpanded ? "bg-primary/10 text-primary" : "text-zinc-600")}>
+          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </div>
       </button>
 
       <AnimatePresence>
@@ -52,14 +54,14 @@ export const SuggestionCard = ({ suggestion }) => {
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="px-5 pb-6 pt-2 border-t border-zinc-800/50">
-              <p className="text-zinc-400 text-sm leading-relaxed mb-4">
+            <div className="px-6 pb-6 pt-2 border-t border-zinc-800/30">
+              <p className="text-zinc-500 text-[13px] leading-relaxed mb-6 font-medium">
                 {suggestion.description}
               </p>
               <div className="flex items-center justify-end">
-                <button className="text-[11px] font-bold text-emerald-500 uppercase tracking-widest hover:text-emerald-400 transition-colors flex items-center gap-2">
-                  Learn more about this rule
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <button className="text-[10px] font-black text-primary uppercase tracking-[0.2em] hover:text-primary-light transition-colors flex items-center gap-2.5">
+                  View full documentation
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(197,160,89,0.5)]" />
                 </button>
               </div>
             </div>

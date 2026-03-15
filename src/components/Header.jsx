@@ -17,13 +17,13 @@ export const Header = ({ title, user }) => {
           <input 
             type="text" 
             placeholder="Search analysis..." 
-            className="bg-zinc-900/50 border border-zinc-800 rounded-full py-1.5 pl-10 pr-4 text-sm text-zinc-300 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all w-64"
+            className="bg-zinc-900/50 border border-zinc-800 rounded-full py-1.5 pl-10 pr-4 text-sm text-zinc-300 focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all w-64"
           />
         </div>
         
         <button className="relative text-zinc-400 hover:text-zinc-100 transition-colors">
           <Bell className="w-5 h-5" />
-          <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full border-2 border-zinc-950" />
+          <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full border-2 border-zinc-950 shadow-[0_0_8px_rgba(197,160,89,0.5)]" />
         </button>
 
         <div className="flex items-center gap-3 pl-4 border-l border-zinc-800">
@@ -31,7 +31,7 @@ export const Header = ({ title, user }) => {
             <span className="text-xs font-semibold text-zinc-200 leading-none capitalize">{userName}</span>
             <span className="text-[10px] text-zinc-500 mt-0.5 leading-none font-medium truncate max-w-[100px]">{user?.email}</span>
           </div>
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 border border-zinc-800 flex items-center justify-center text-xs font-bold text-emerald-400 shadow-lg shadow-emerald-500/5">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 border border-zinc-800 flex items-center justify-center text-xs font-bold text-primary shadow-lg shadow-primary/5">
             {userInitials}
           </div>
         </div>
