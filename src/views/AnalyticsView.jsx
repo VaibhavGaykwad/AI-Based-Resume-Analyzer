@@ -15,7 +15,7 @@ import {
 import { cn } from '../utils/cn';
 import { getUserAnalyses } from '../utils/firestoreService';
 
-const COLORS = ['#3B82F6', '#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444'];
+const COLORS = ['#3B82F6', '#8B5CF6', '#06B6D4', '#60A5FA', '#A78BFA', '#22D3EE'];
 
 const Sparkline = ({ data, color = "#8B5CF6" }) => {
   if (!data || data.length < 2) return null;
@@ -118,20 +118,20 @@ const KPICard = ({ title, icon: Icon, value, suffix = "", trend, trendDirection,
       glow: "hover:shadow-cyan-500/5 hover:border-cyan-200"
     },
     green: {
-      gradient: "from-emerald-500 to-teal-500",
-      bgLight: "bg-emerald-50/50",
-      border: "border-emerald-100",
-      text: "text-emerald-600",
-      sparkline: "#10B981",
-      glow: "hover:shadow-emerald-500/5 hover:border-emerald-200"
+      gradient: "from-cyan-500 to-blue-500",
+      bgLight: "bg-cyan-50/50",
+      border: "border-cyan-100",
+      text: "text-cyan-600",
+      sparkline: "#06B6D4",
+      glow: "hover:shadow-cyan-500/5 hover:border-cyan-200"
     },
     orange: {
-      gradient: "from-orange-500 to-amber-500",
-      bgLight: "bg-orange-50/50",
-      border: "border-orange-100",
-      text: "text-orange-605",
-      sparkline: "#F59E0B",
-      glow: "hover:shadow-orange-500/5 hover:border-orange-200"
+      gradient: "from-purple-500 to-indigo-500",
+      bgLight: "bg-purple-50/50",
+      border: "border-purple-100",
+      text: "text-purple-600",
+      sparkline: "#8B5CF6",
+      glow: "hover:shadow-purple-500/5 hover:border-purple-200"
     }
   };
 
@@ -837,16 +837,16 @@ export const AnalyticsView = ({ user }) => {
                         <stop offset="100%" stopColor="#083344" />
                       </linearGradient>
                       <linearGradient id="pieGreenGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#10B981" />
-                        <stop offset="100%" stopColor="#064E3B" />
+                        <stop offset="0%" stopColor="#06B6D4" />
+                        <stop offset="100%" stopColor="#0891B2" />
                       </linearGradient>
                       <linearGradient id="pieTealGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#14B8A6" />
-                        <stop offset="100%" stopColor="#115E59" />
+                        <stop offset="0%" stopColor="#60A5FA" />
+                        <stop offset="100%" stopColor="#2563EB" />
                       </linearGradient>
                       <linearGradient id="pieOrangeGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#F59E0B" />
-                        <stop offset="100%" stopColor="#78350F" />
+                        <stop offset="0%" stopColor="#A78BFA" />
+                        <stop offset="100%" stopColor="#7C3AED" />
                       </linearGradient>
                     </defs>
                     <Tooltip content={<CategoryTooltip />} />
@@ -931,16 +931,16 @@ export const AnalyticsView = ({ user }) => {
                     <stop offset="100%" stopColor="#0891B2" />
                   </linearGradient>
                   <linearGradient id="barGreenGrad" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#10B981" stopOpacity={0.85} />
-                    <stop offset="100%" stopColor="#059669" />
+                    <stop offset="0%" stopColor="#06B6D4" stopOpacity={0.85} />
+                    <stop offset="100%" stopColor="#0891B2" />
                   </linearGradient>
                   <linearGradient id="barTealGrad" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#14B8A6" stopOpacity={0.85} />
-                    <stop offset="100%" stopColor="#0D9488" />
+                    <stop offset="0%" stopColor="#60A5FA" stopOpacity={0.85} />
+                    <stop offset="100%" stopColor="#2563EB" />
                   </linearGradient>
                   <linearGradient id="barOrangeGrad" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.85} />
-                    <stop offset="100%" stopColor="#D97706" />
+                    <stop offset="0%" stopColor="#A78BFA" stopOpacity={0.85} />
+                    <stop offset="100%" stopColor="#7C3AED" />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E2E8F0" />
@@ -1030,7 +1030,7 @@ export const AnalyticsView = ({ user }) => {
             trend={matchTrendText} 
             trendDirection={matchTrendDir} 
             sparklineData={matchHistory} 
-            colorTheme="green" 
+            colorTheme="cyan" 
             description={matchBadgeText.toLowerCase()} 
           />
           <KPICard 
@@ -1040,7 +1040,7 @@ export const AnalyticsView = ({ user }) => {
             suffix={pageCount === 1 ? " Page" : " Pages"} 
             trend={pageBadgeText} 
             trendDirection={pageCount <= 2 ? "up" : "down"} 
-            colorTheme="cyan" 
+            colorTheme="blue" 
             description={`${wordCount} total words`} 
           />
           <KPICard 
@@ -1050,7 +1050,7 @@ export const AnalyticsView = ({ user }) => {
             suffix="s" 
             trend="Fast" 
             trendDirection="up" 
-            colorTheme="orange" 
+            colorTheme="orange"
             description="AI engine parser speed" 
           />
         </div>
