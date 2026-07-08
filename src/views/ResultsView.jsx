@@ -177,9 +177,9 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
   };
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-10 pb-16">
       {/* Header Profile Section */}
-      <div className="glass-card p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-zinc-200 bg-white">
+      <div className="glass-card p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-zinc-200 bg-white shadow-sm hover:shadow-md transition-shadow">
         <div className="flex items-center gap-6">
           <div className="w-20 h-20 rounded-[1.5rem] bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-3xl font-black text-white shadow-xl shadow-primary/20 uppercase">
             {data.name.split(' ').map(n => n[0]).join('')}
@@ -230,20 +230,20 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
             const secondaryClassification = detectedDomains[1];
 
             return (
-              <div className="glass-card p-6 border border-zinc-200 bg-white flex flex-col gap-4 relative overflow-hidden group shadow-sm">
+              <div className="glass-card p-8 border border-zinc-200 bg-white flex flex-col gap-6 relative overflow-hidden group shadow-sm hover:shadow-md transition-shadow duration-300">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
                 
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 text-primary">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-xl bg-gradient-to-tr from-blue-50 to-indigo-50 border border-indigo-100 text-indigo-500 shadow-sm shrink-0">
                     <Target className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-[0.2em] block">Detected Resume Domain</span>
-                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                      <h4 className="text-xl font-black text-zinc-800 italic tracking-tight uppercase">
+                    <span className="text-[10px] uppercase font-bold text-zinc-440 tracking-[0.2em] block leading-none mb-1.5">Detected Resume Domain</span>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                      <h4 className="text-xl font-extrabold text-zinc-800 tracking-tight uppercase leading-none">
                         {isFallback ? 'General Professional' : primaryClassification.domain}
                       </h4>
-                      <span className="text-xs font-black text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md">
+                      <span className="text-[10px] font-bold text-indigo-650 bg-gradient-to-r from-blue-50/60 via-purple-50/60 to-cyan-50/60 border border-purple-100 px-2.5 py-1 rounded-lg shadow-xs select-none">
                         Confidence: {isFallback ? Math.min(69, primaryClassification.confidence) : primaryClassification.confidence}%
                       </span>
                     </div>
@@ -251,14 +251,14 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
                 </div>
 
                 {secondaryClassification && !isFallback && (
-                  <div className="flex items-center gap-2 text-xs font-bold text-zinc-500 pl-1 border-t border-zinc-100 pt-3">
-                    <span className="text-zinc-400 uppercase text-[9px] tracking-wider">Secondary Domain:</span>
-                    <span className="text-zinc-700">{secondaryClassification.domain}</span>
-                    <span className="text-primary font-black font-mono">({secondaryClassification.confidence}%)</span>
+                  <div className="flex items-center gap-2 text-xs font-bold text-zinc-550 pl-1 border-t border-zinc-100 pt-4">
+                    <span className="text-zinc-400 uppercase text-[9px] tracking-wider leading-none">Secondary Domain:</span>
+                    <span className="text-zinc-700 leading-none">{secondaryClassification.domain}</span>
+                    <span className="text-[10px] font-bold text-indigo-650 bg-gradient-to-r from-indigo-50/60 to-purple-50/60 px-2 py-0.5 rounded-md border border-indigo-100 select-none">({secondaryClassification.confidence}%)</span>
                   </div>
                 )}
 
-                <p className="text-[11px] text-zinc-500 leading-relaxed font-semibold">
+                <p className="text-[12px] text-zinc-500 leading-relaxed font-medium">
                   {isFallback ? (
                     "This resume's career category could not be classified with high confidence, or spans highly diverse disciplines. Recommendations have fallen back to general ATS layout, spelling grammar, structure, and formatting metrics."
                   ) : (
@@ -272,52 +272,52 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
           {/* Hero Score Card */}
           <div className="glass-card p-8 flex flex-col md:flex-row items-center gap-10 bg-white border border-zinc-200 shadow-sm">
             <ScoreGauge score={data.score} />
-            <div className="flex-1 space-y-4">
+            <div className="flex-1 space-y-5">
               {(() => {
                 const getScoreDetails = (score, role) => {
                   if (score >= 90) {
                     return {
-                      rank: 'Top 5%',
-                      evaluation: 'Gold Standard',
-                      color: 'text-primary',
+                      rank: 'Strong Match',
+                      evaluation: 'Recommended',
+                      color: 'text-purple-600',
                       feedback: (
-                        <>Your resume performs exceptionally well for the <span className="text-primary font-bold italic underline decoration-primary/30 underline-offset-4">{role || 'target'}</span> position. You've demonstrated flawless expertise with perfect ATS compatibility!</>
+                        <>Your resume performs exceptionally well for the <span className="text-purple-600 font-bold italic underline decoration-purple-300 underline-offset-4">{role || 'target'}</span> position. You've demonstrated flawless expertise with perfect ATS compatibility!</>
                       )
                     };
                   } else if (score >= 80) {
                     return {
-                      rank: 'Top 15%',
-                      evaluation: 'Excellent',
-                      color: 'text-green-600',
+                      rank: 'Excellent',
+                      evaluation: 'Above Average',
+                      color: 'text-indigo-600',
                       feedback: (
-                        <>Your resume is highly competitive for the <span className="text-primary font-bold italic underline decoration-primary/30 underline-offset-4">{role || 'target'}</span> position. You have strong keyword alignment, though there is minor room to optimize your keyword density.</>
+                        <>Your resume is highly competitive for the <span className="text-indigo-600 font-bold italic underline decoration-indigo-300 underline-offset-4">{role || 'target'}</span> position. You have strong keyword alignment, though there is minor room to optimize your keyword density.</>
                       )
                     };
                   } else if (score >= 65) {
                     return {
-                      rank: 'Top 40%',
-                      evaluation: 'Competitive',
+                      rank: 'Above Average',
+                      evaluation: 'Strong Match',
                       color: 'text-blue-600',
                       feedback: (
-                        <>Your resume has a solid foundation for the <span className="text-primary font-bold italic underline decoration-primary/30 underline-offset-4">{role || 'target'}</span> position but requires more keyword optimization and structural refinement to consistently pass strict ATS filters.</>
+                        <>Your resume has a solid foundation for the <span className="text-blue-600 font-bold italic underline decoration-blue-300 underline-offset-4">{role || 'target'}</span> position but requires more keyword optimization and structural refinement to consistently pass strict ATS filters.</>
                       )
                     };
                   } else if (score >= 50) {
                     return {
-                      rank: 'Top 70%',
-                      evaluation: 'Needs Polish',
-                      color: 'text-amber-600',
+                      rank: 'Competitive',
+                      evaluation: 'Above Average',
+                      color: 'text-orange-500',
                       feedback: (
-                        <>Your resume needs significant improvement for the <span className="text-primary font-bold italic underline decoration-primary/30 underline-offset-4">{role || 'target'}</span> position. It is likely missing critical keywords or formatting needed to clear ATS screens. Please review the missing gaps below.</>
+                        <>Your resume needs significant improvement for the <span className="text-orange-500 font-bold italic underline decoration-orange-300 underline-offset-4">{role || 'target'}</span> position. It is likely missing critical keywords or formatting needed to clear ATS screens. Please review the missing gaps below.</>
                       )
                     };
                   } else {
                     return {
                       rank: 'Needs Review',
-                      evaluation: 'Critical Fixes',
-                      color: 'text-red-650',
+                      evaluation: 'Competitive',
+                      color: 'text-red-500',
                       feedback: (
-                        <>Your resume currently struggles against basic ATS requirements for the <span className="text-primary font-bold italic underline decoration-primary/30 underline-offset-4">{role || 'target'}</span> position. We highly recommend rebuilding based on our targeted suggestions.</>
+                        <>Your resume currently struggles against basic ATS requirements for the <span className="text-red-500 font-bold italic underline decoration-red-350 override-decoration underline-offset-4">{role || 'target'}</span> position. We highly recommend rebuilding based on our targeted suggestions.</>
                       )
                     };
                   }
@@ -327,21 +327,21 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
                 return (
                   <>
                     <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-6 bg-primary rounded-full" />
-                      <h3 className="text-2xl font-black text-zinc-800 uppercase tracking-tighter italic">Analysis Summary</h3>
+                      <div className="w-1.5 h-6 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full" />
+                      <h3 className="text-2xl font-extrabold text-zinc-800 uppercase tracking-tighter">Analysis Summary</h3>
                     </div>
-                    <p className="text-zinc-650 leading-relaxed font-semibold text-sm">
+                    <p className="text-zinc-650 leading-relaxed font-medium text-sm">
                       {scoreDetails.feedback}
                     </p>
-                    <div className="flex items-center gap-4 pt-2">
+                    <div className="flex items-center gap-6 pt-3 border-t border-zinc-100">
                       <div className="flex flex-col">
-                        <span className="text-3xl font-[1000] text-zinc-800 italic tracking-tighter">{scoreDetails.rank}</span>
-                        <span className="text-[9px] uppercase font-black text-zinc-400 tracking-[0.2em]">Candidate Rank</span>
+                        <span className="text-2xl font-black text-zinc-800 tracking-tight">{scoreDetails.rank}</span>
+                        <span className="text-[9px] uppercase font-bold text-zinc-440 tracking-[0.2em] mt-1.5">Candidate Rank</span>
                       </div>
-                      <div className="w-px h-12 bg-zinc-200" />
+                      <div className="w-px h-10 bg-zinc-200" />
                       <div className="flex flex-col">
-                        <span className={`text-3xl font-[1000] italic tracking-tighter ${scoreDetails.color}`}>{scoreDetails.evaluation}</span>
-                        <span className="text-[9px] uppercase font-black text-zinc-400 tracking-[0.2em]">ATS Evaluation</span>
+                        <span className={`text-2xl font-black tracking-tight ${scoreDetails.color}`}>{scoreDetails.evaluation}</span>
+                        <span className="text-[9px] uppercase font-bold text-zinc-440 tracking-[0.2em] mt-1.5">ATS Evaluation</span>
                       </div>
                     </div>
                   </>
@@ -351,7 +351,7 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
           </div>
 
           {/* Skills Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="glass-card p-8 space-y-5 border border-zinc-200 shadow-sm bg-white">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-lg font-black text-zinc-800 uppercase tracking-tighter italic">Identified Skills</h3>
@@ -371,12 +371,12 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
         </div>
 
         {/* Suggestions Column */}
-        <div className="space-y-6">
+        <div className="space-y-8">
           <div className="flex items-center justify-between px-2">
-            <h3 className="text-xl font-[1000] text-zinc-800 tracking-tighter italic uppercase">Quick Tweaks</h3>
-            <ExternalLink className="w-4 h-4 text-zinc-400" />
+            <h3 className="text-xl font-extrabold text-zinc-800 tracking-tighter uppercase">Quick Tweaks</h3>
+            <ExternalLink className="w-4 h-4 text-zinc-405" />
           </div>
-          <div className="space-y-4">
+          <div className="space-y-5">
             {data.suggestions.map((suggestion, idx) => (
               <motion.div
                 key={suggestion.id}
@@ -401,18 +401,18 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
             ))}
           </div>
           
-          <div className="p-8 rounded-[2rem] bg-gradient-to-br from-primary to-blue-600 border-0 shadow-xl shadow-primary/20 relative overflow-hidden group transition-all duration-300">
+          <div className="p-8 rounded-[2rem] bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 border-0 shadow-xl shadow-primary/10 relative overflow-hidden group transition-all duration-300 hover:shadow-2xl">
             <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-colors" />
             <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-30 transition-all group-hover:scale-110">
               <Sparkles className="w-12 h-12 text-white" />
             </div>
-            <h4 className="font-black text-white mb-2 relative z-10 uppercase tracking-tighter italic text-lg">Pro Strategy</h4>
-            <p className="text-[13px] text-white/80 leading-relaxed mb-6 relative z-10 transition-colors font-semibold">
+            <h4 className="font-extrabold text-white mb-2 relative z-10 uppercase tracking-tighter text-lg">Pro Strategy</h4>
+            <p className="text-[13px] text-white/80 leading-relaxed mb-6 relative z-10 transition-colors font-medium">
               Integrating certifications like 'AWS Certified Developer' could boost your ATS score by up to 12 points for this role.
             </p>
             <button 
               onClick={handleRefineProfile}
-              className="w-full text-[10px] font-extrabold text-primary bg-white hover:bg-slate-50 transition-all px-6 py-3 rounded-xl relative z-10 uppercase tracking-[0.2em] shadow-lg shadow-white/10 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              className="w-full text-[10px] font-extrabold text-indigo-600 bg-white hover:bg-slate-50 transition-all px-6 py-3 rounded-xl relative z-10 uppercase tracking-[0.2em] shadow-lg shadow-white/5 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
               Refine profile
             </button>
