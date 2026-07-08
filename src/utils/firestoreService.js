@@ -8,6 +8,8 @@ import {
     limit,
     getDocs,
     serverTimestamp,
+    doc,
+    deleteDoc,
 } from 'firebase/firestore';
 
 const ANALYSES_COLLECTION = 'analyses';
@@ -40,15 +42,32 @@ export async function saveAnalysis(userId, fileName, pdfUrl, analysisData) {
 export async function getUserAnalyses(userId, maxResults = 5) {
     const q = query(
         collection(db, ANALYSES_COLLECTION),
-        where('userId', '==', userId),
-        orderBy('createdAt', 'desc'),
-        limit(maxResults)
+        where('userId', '==', userId)
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
+    const results = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
         // Convert Firestore Timestamp to a plain JS Date for easy rendering
         createdAt: doc.data().createdAt?.toDate?.() ?? new Date(),
     }));
+
+    // Client-side sort by createdAt desc
+    results.sort((a, b) => b.createdAt - a.createdAt);
+
+    return results.slice(0, maxResults);
+}
+
+export async function deleteAnalysis(analysisId) {
+    console.log('[deleteAnalysis] Starting delete for ID:', analysisId);
+    try {
+        const docRef = doc(db, ANALYSES_COLLECTION, analysisId);
+        console.log('[deleteAnalysis] Doc ref path:', docRef.path);
+        await deleteDoc(docRef);
+        console.log('[deleteAnalysis] SUCCESS — document deleted:', analysisId);
+    } catch (err) {
+        console.error('[deleteAnalysis] FAILED — code:', err.code, 'message:', err.message);
+        console.error('[deleteAnalysis] Full error:', err);
+        throw err; // re-throw so caller can handle
+    }
 }

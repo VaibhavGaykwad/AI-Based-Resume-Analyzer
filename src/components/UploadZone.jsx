@@ -57,10 +57,10 @@ export const UploadZone = ({ onUploadStart }) => {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={cn(
-          "relative group cursor-pointer rounded-[2.5rem] border border-zinc-800/50 transition-all duration-500 flex flex-col items-center justify-center p-12 min-h-[380px] overflow-hidden bg-[#0d0d0f]",
+          "relative group cursor-pointer rounded-2xl border border-zinc-200 transition-all duration-500 flex flex-col items-center justify-center p-12 min-h-[380px] overflow-hidden bg-white shadow-sm",
           isDragging
-            ? "border-primary/40 bg-primary/5 shadow-[0_0_40px_rgba(197,160,89,0.05)]"
-            : "hover:border-primary/20 hover:bg-zinc-900/40"
+            ? "border-primary bg-primary/5 shadow-md shadow-primary/5"
+            : "hover:border-primary/40 hover:bg-slate-50/50 hover:shadow-md"
         )}
         onClick={() => fileInputRef.current?.click()}
       >
@@ -73,28 +73,28 @@ export const UploadZone = ({ onUploadStart }) => {
         />
 
         {/* Subtle radial glow matching image */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(197,160,89,0.03),transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(139,92,246,0.03),transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
 
-        <div className="w-24 h-24 rounded-3xl bg-[#1a1a1c] flex items-center justify-center mb-8 group-hover:scale-105 transition-transform duration-500 shadow-2xl border border-zinc-800/80 relative overflow-hidden">
+        <div className="w-20 h-20 rounded-2xl bg-slate-50 flex items-center justify-center mb-8 group-hover:scale-105 transition-transform duration-500 shadow-sm border border-zinc-200 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />
-          <Upload className={cn("w-10 h-10 transition-colors", isDragging ? "text-primary" : "text-zinc-500 group-hover:text-primary")} />
+          <Upload className={cn("w-8 h-8 transition-colors", isDragging ? "text-primary" : "text-zinc-400 group-hover:text-primary")} />
         </div>
 
-        <h3 className="text-2xl font-bold text-zinc-100 mb-2 tracking-tight">Upload your resume</h3>
+        <h3 className="text-2xl font-bold text-zinc-800 mb-2 tracking-tight">Upload your resume</h3>
         <p className="text-zinc-500 text-center max-w-xs mb-10 leading-relaxed font-medium">
           Drag and drop your PDF here, or <span className="text-primary font-bold hover:underline">browse files</span>
         </p>
 
-        <div className="flex items-center gap-6 px-6 py-3 bg-[#09090b] rounded-2xl border border-zinc-800/80 text-[10px] font-black text-zinc-400 uppercase tracking-[0.15em] shadow-inner">
+        <div className="flex items-center gap-6 px-6 py-3 bg-slate-50 rounded-2xl border border-zinc-200 text-[10px] font-bold text-zinc-550 uppercase tracking-[0.15em] shadow-sm">
           <div className="flex items-center gap-2.5">
-            <div className="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+            <div className="w-4 h-4 rounded-full bg-primary/15 flex items-center justify-center border border-primary/30">
                <CheckCircle2 className="w-2.5 h-2.5 text-primary" />
             </div>
             PDF FORMAT ONLY
           </div>
-          <div className="w-1 h-1 rounded-full bg-zinc-800" />
+          <div className="w-1 h-1 rounded-full bg-zinc-300" />
           <div className="flex items-center gap-2.5">
-            <div className="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 text-primary">
+            <div className="w-4 h-4 rounded-full bg-primary/15 flex items-center justify-center border border-primary/30 text-primary">
                <CheckCircle2 className="w-2.5 h-2.5" />
             </div>
             MAX SIZE: 10MB
@@ -107,13 +107,13 @@ export const UploadZone = ({ onUploadStart }) => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="absolute bottom-6 flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm"
+              className="absolute bottom-6 flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-red-550 text-sm"
             >
               <AlertCircle className="w-4 h-4" />
               {error}
               <button
                 onClick={(e) => { e.stopPropagation(); setError(null); }}
-                className="ml-2 hover:text-red-300"
+                className="ml-2 hover:text-red-600"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -122,14 +122,14 @@ export const UploadZone = ({ onUploadStart }) => {
         </AnimatePresence>
       </div>
 
-      <div className="mt-12 flex items-center justify-between px-6 opacity-60">
+      <div className="mt-12 flex items-center justify-between px-6 opacity-80">
         <div className="flex items-center gap-3">
-          <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(197,160,89,0.5)]" />
-          <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">Wait time: ~10 seconds</span>
+          <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(139,92,246,0.5)]" />
+          <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">Wait time: ~10 seconds</span>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(197,160,89,0.5)]" />
-          <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">99.9% Accuracy</span>
+          <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(139,92,246,0.5)]" />
+          <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">99.9% Accuracy</span>
         </div>
       </div>
     </div>

@@ -4,10 +4,10 @@ import { cn } from '../utils/cn';
 
 export const BadgeList = ({ items, type = 'success' }) => {
   const themes = {
-    success: "bg-primary/10 text-primary border-primary/20 shadow-[0_0_15px_rgba(197,160,89,0.05)]",
-    warning: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-    danger: "bg-red-500/10 text-red-400 border-red-500/20",
-    neutral: "bg-zinc-800/50 text-zinc-400 border-zinc-700/50"
+    success: "bg-primary/10 text-primary border-primary/20",
+    warning: "bg-amber-50 text-amber-700 border-amber-200",
+    danger: "bg-red-50 text-red-650 border-red-200",
+    neutral: "bg-slate-50 text-zinc-500 border-zinc-200"
   };
 
   return (

@@ -31,22 +31,27 @@ export const UploadView = ({ onAnalysisComplete, user }) => {
 
   const handleAnalysisComplete = async () => {
     try {
+      const startTime = Date.now();
       // Step 1-5: Extract text and run Gemini analysis
       const text = await extractTextFromPDF(uploadedFile);
       const results = await analyzeResume(text);
+      const processingTime = parseFloat(((Date.now() - startTime) / 1000).toFixed(1));
 
+      const resultsWithContext = { ...results, originalText: text, processingTime };
+
+      let docId = null;
       // Step 6: Save to Firestore (non-fatal)
       try {
         if (user) {
           // Note: Skipping PDF Storage upload to keep the app on the Firebase free tier
-          await saveAnalysis(user.uid, uploadedFile.name, '', results);
+          docId = await saveAnalysis(user.uid, uploadedFile.name, '', resultsWithContext);
         }
       } catch (saveErr) {
         console.warn('Could not save to database:', saveErr);
         setSaveWarning('Analysis complete, but we couldn\'t save it to your history. Check your connection or Firestore setup.');
       }
 
-      onAnalysisComplete({ data: results, fileName: uploadedFile.name });
+      onAnalysisComplete({ id: docId, data: resultsWithContext, fileName: uploadedFile.name });
     } catch (err) {
       console.error('Analysis failed:', err);
       setError(err.message || 'Failed to analyze resume. Please try again.');
@@ -89,7 +94,7 @@ export const UploadView = ({ onAnalysisComplete, user }) => {
             className="w-full"
           >
             <div className="text-center mb-12">
-              <h1 className="text-4xl font-extrabold text-zinc-100 mb-4 tracking-tight">
+              <h1 className="text-4xl font-bold text-zinc-800 mb-4 tracking-tight">
                 Unlock your <span className="text-primary font-black italic">Career Potential</span>
               </h1>
               <p className="text-zinc-500 text-lg max-w-xl mx-auto">
@@ -111,7 +116,7 @@ export const UploadView = ({ onAnalysisComplete, user }) => {
             <ScanningProgress
               onComplete={handleAnalysisComplete}
               steps={ANALYSIS_STEPS}
-              totalDuration={10000}
+              totalDuration={9200}
             />
           </motion.div>
         )}
@@ -125,15 +130,15 @@ export const UploadView = ({ onAnalysisComplete, user }) => {
             className="flex flex-col items-center gap-6"
           >
             <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-              <AlertCircle className="w-8 h-8 text-red-400" />
+              <AlertCircle className="w-8 h-8 text-red-500" />
             </div>
             <div className="text-center">
-              <h3 className="text-xl font-bold text-zinc-100 mb-2">Analysis Failed</h3>
+              <h3 className="text-xl font-bold text-zinc-800 mb-2">Analysis Failed</h3>
               <p className="text-zinc-500 max-w-sm">{error}</p>
             </div>
             <button
               onClick={() => { setStatus('idle'); setError(null); setUploadedFile(null); }}
-              className="px-6 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-medium transition-colors"
+              className="px-6 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 text-zinc-700 font-bold transition-colors cursor-pointer text-sm shadow-xs"
             >
               Try Again
             </button>

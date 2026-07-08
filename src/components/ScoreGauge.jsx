@@ -27,7 +27,7 @@ export const ScoreGauge = ({ score }) => {
           cx="96"
           cy="96"
           r={radius}
-          className="stroke-zinc-900 fill-none"
+          className="stroke-slate-100 fill-none"
           strokeWidth="12"
         />
         {/* Progress Circle */}
@@ -54,12 +54,12 @@ export const ScoreGauge = ({ score }) => {
         >
           {score}
         </motion.span>
-        <span className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-600 mt-1 italic">ATS Score</span>
+        <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-zinc-400 mt-1">ATS Score</span>
       </div>
 
       {/* Glow Effect */}
       <div className={cn(
-        "absolute inset-0 rounded-full blur-3xl opacity-20 -z-10",
+        "absolute inset-0 rounded-full blur-3xl opacity-5 -z-10",
         score >= 80 ? "bg-primary" : score >= 50 ? "bg-amber-500" : "bg-red-500"
       )} />
     </div>

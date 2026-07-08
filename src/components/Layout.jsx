@@ -14,13 +14,13 @@ export const Layout = ({ children, activeView, onViewChange, user }) => {
   };
 
   return (
-    <div className="flex bg-zinc-950 min-h-screen">
+    <div className="flex bg-[#F7F9FC] min-h-screen">
       <Sidebar activeView={activeView} onViewChange={onViewChange} user={user} />
       
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <Header title={viewTitles[activeView]} user={user} />
+        <Header title={viewTitles[activeView]} user={user} onViewChange={onViewChange} />
         
-        <main className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.03),transparent_40%)]">
+        <main className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.08),transparent_50%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.08),transparent_50%)]">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeView}

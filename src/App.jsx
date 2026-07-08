@@ -27,15 +27,25 @@ function App() {
   }, []);
 
   // Called when a brand-new analysis finishes
-  const handleAnalysisComplete = ({ data }) => {
-    setAnalysisResult(data);
+  const handleAnalysisComplete = ({ id, data }) => {
+    setAnalysisResult({ id, data });
     setActiveView('results');
   };
 
   // Called when a history item is clicked
-  const handleSelectHistoricalAnalysis = (data) => {
-    setAnalysisResult(data);
+  const handleSelectHistoricalAnalysis = ({ id, data }) => {
+    setAnalysisResult({ id, data });
     setActiveView('results');
+  };
+
+  // Called when an analysis is deleted in History
+  const handleDeleteAnalysis = (deletedId) => {
+    if (analysisResult && analysisResult.id === deletedId) {
+      setAnalysisResult(null);
+      if (activeView === 'results' || activeView === 'analytics') {
+        setActiveView('history');
+      }
+    }
   };
 
   if (initializing) {
@@ -80,13 +90,18 @@ function App() {
         <UploadView onAnalysisComplete={handleAnalysisComplete} user={user} />
       )}
       {activeView === 'results' && (
-        <ResultsView data={analysisResult} />
+        <ResultsView data={analysisResult?.data} />
       )}
       {activeView === 'analytics' && (
-        <AnalyticsView />
+        <AnalyticsView user={user} />
       )}
       {activeView === 'history' && (
-        <AnalysisHistory user={user} onSelectAnalysis={handleSelectHistoricalAnalysis} />
+        <AnalysisHistory 
+          user={user} 
+          onSelectAnalysis={handleSelectHistoricalAnalysis} 
+          onDeleteAnalysis={handleDeleteAnalysis}
+          onNavigateToUpload={() => setActiveView('upload')}
+        />
       )}
       {activeView === 'profile' && (
         <ProfileView user={user} />
