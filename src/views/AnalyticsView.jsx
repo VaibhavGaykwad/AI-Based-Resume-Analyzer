@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  AreaChart, Area, PieChart, Pie, Cell
+  AreaChart, Area, PieChart, Pie, Cell,
+  BarChart, Bar, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend
 } from 'recharts';
 import { 
   TrendingUp, Award, Clock, Loader2, Inbox, 
@@ -261,12 +262,40 @@ const getCategoryTheme = (categoryName) => {
   };
 };
 
-const CustomTooltip = ({ active, payload, label }) => {
+const ScoreTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white border border-zinc-200 p-4 rounded-xl shadow-lg">
-        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-2">{label}</p>
-        <p className="text-xl font-black text-primary italic tracking-tight">{payload[0].value} ATS</p>
+      <div className="bg-white border border-zinc-200 p-4.5 rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.1)] backdrop-blur-md bg-white/95">
+        <p className="text-[10px] font-black text-[#8B5CF6] uppercase tracking-[0.25em] mb-1.5">{label}</p>
+        <p className="text-xl font-black text-[#8B5CF6] italic tracking-tight">{payload[0].value} <span className="text-xs font-bold text-zinc-450 italic">ATS Score</span></p>
+      </div>
+    );
+  }
+  return null;
+};
+
+const MatchTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white border border-zinc-200 p-4.5 rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.1)] backdrop-blur-md bg-white/95">
+        <p className="text-[10px] font-black text-[#10B981] uppercase tracking-[0.25em] mb-1.5">{label}</p>
+        <p className="text-xl font-black text-[#10B981] italic tracking-tight">{payload[0].value}% <span className="text-xs font-bold text-zinc-450 italic">Job Match</span></p>
+      </div>
+    );
+  }
+  return null;
+};
+
+const CategoryTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-white border border-zinc-200 p-4.5 rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.1)] backdrop-blur-md bg-white/95">
+        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">{data.category || payload[0].name}</p>
+        <div className="flex items-baseline gap-1 mt-1">
+          <span className="text-xl font-black text-zinc-800 italic">{data.score || payload[0].value}</span>
+          <span className="text-[10.5px] font-bold text-zinc-450 italic">/100 Points</span>
+        </div>
       </div>
     );
   }
@@ -672,6 +701,12 @@ export const AnalyticsView = ({ user }) => {
     name: a.fileName?.substring(0, 15) || 'Resume'
   }));
 
+  const matchTrendData = analyses.slice().reverse().map(a => ({
+    label: new Date(a.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+    match: getJobMatchForAnalysis(a),
+    name: a.fileName?.substring(0, 15) || 'Resume'
+  }));
+
   return (
     <div className="space-y-8 pb-12">
       {/* Redesigned Premium Header & Resume Selector */}
@@ -767,21 +802,20 @@ export const AnalyticsView = ({ user }) => {
 
       {/* Top Section Layout: Donut Chart + Detailed Progress Bars */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
         {/* Left Card: RESUME SCORE BREAKDOWN (Donut) */}
         <div className="glass-card p-6 flex flex-col justify-between border border-zinc-200 bg-white shadow-xs">
           <div>
-            <h3 className="text-lg font-black text-zinc-805 tracking-tight italic uppercase">Resume Score Breakdown</h3>
+            <h3 className="text-lg font-black text-zinc-800 tracking-tight italic uppercase">Resume Score Breakdown</h3>
             <p className="text-zinc-500 text-xs mt-0.5 leading-relaxed font-semibold">Distribution of your ATS score across key evaluation areas.</p>
           </div>
           
           <div className="flex flex-col sm:flex-row items-center gap-8 mt-6">
             {/* Center Value Overlay inside Donut Chart Ring */}
-            <div className="relative w-[250px] h-[250px] shrink-0 flex items-center justify-center">
+            <div className="relative w-[230px] h-[230px] shrink-0 flex items-center justify-center mx-auto sm:mx-0">
               <div className="absolute flex flex-col items-center justify-center text-center">
-                <span className="text-6xl font-[1000] text-zinc-800 italic tracking-tighter leading-none">{atsScore}</span>
-                <span className="text-[10px] uppercase font-black text-zinc-450 tracking-widest mt-1.5 block">ATS Score</span>
-                <span className={cn("text-[9px] font-black uppercase px-2 py-0.5 rounded-lg border mt-2.5 inline-block leading-none", scoreBadgeColor)}>
+                <span className="text-5xl font-[1000] text-zinc-800 italic tracking-tighter leading-none">{atsScore}</span>
+                <span className="text-[9px] uppercase font-black text-zinc-450 tracking-widest mt-1 block">ATS Score</span>
+                <span className={cn("text-[9px] font-black uppercase px-2 py-0.5 rounded-lg border mt-2 inline-block leading-none", scoreBadgeColor)}>
                   {scoreBadgeText}
                 </span>
               </div>
@@ -789,29 +823,67 @@ export const AnalyticsView = ({ user }) => {
               <div className="w-full h-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
+                    <defs>
+                      <linearGradient id="pieBlueGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3B82F6" />
+                        <stop offset="100%" stopColor="#1E3A8A" />
+                      </linearGradient>
+                      <linearGradient id="piePurpleGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#8B5CF6" />
+                        <stop offset="100%" stopColor="#4C1D95" />
+                      </linearGradient>
+                      <linearGradient id="pieCyanGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#06B6D4" />
+                        <stop offset="100%" stopColor="#083344" />
+                      </linearGradient>
+                      <linearGradient id="pieGreenGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#10B981" />
+                        <stop offset="100%" stopColor="#064E3B" />
+                      </linearGradient>
+                      <linearGradient id="pieTealGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#14B8A6" />
+                        <stop offset="100%" stopColor="#115E59" />
+                      </linearGradient>
+                      <linearGradient id="pieOrangeGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#F59E0B" />
+                        <stop offset="100%" stopColor="#78350F" />
+                      </linearGradient>
+                    </defs>
+                    <Tooltip content={<CategoryTooltip />} />
                     <Pie
                       data={breakdownItemsEx}
                       cx="50%"
                       cy="50%"
-                      innerRadius={80}
-                      outerRadius={108}
-                      paddingAngle={3}
+                      innerRadius={72}
+                      outerRadius={96}
+                      paddingAngle={4}
+                      cornerRadius={6}
                       dataKey="weight"
                       nameKey="category"
+                      isAnimationActive={true}
+                      animationDuration={1005}
                     >
-                      {breakdownItemsEx.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.theme.color} stroke="rgba(229, 231, 235, 0.5)" strokeWidth={1} />
-                      ))}
+                      {breakdownItemsEx.map((entry, index) => {
+                        const norm = (entry.category || '').toLowerCase();
+                        let fillGrad = 'url(#pieOrangeGrad)';
+                        if (norm.includes('skill') || norm.includes('competenc') || norm.includes('language') || norm.includes('tech')) fillGrad = 'url(#pieBlueGrad)';
+                        else if (norm.includes('experience') || norm.includes('achievement') || norm.includes('project') || norm.includes('career') || norm.includes('histor')) fillGrad = 'url(#pieGreenGrad)';
+                        else if (norm.includes('keyword') || norm.includes('ats') || norm.includes('term') || norm.includes('match')) fillGrad = 'url(#piePurpleGrad)';
+                        else if (norm.includes('format') || norm.includes('structur') || norm.includes('layout')) fillGrad = 'url(#pieCyanGrad)';
+                        else if (norm.includes('readability') || norm.includes('clarity') || norm.includes('education') || norm.includes('academic')) fillGrad = 'url(#pieTealGrad)';
+                        
+                        return <Cell key={`cell-${index}`} fill={fillGrad} stroke="#ffffff" strokeWidth={2} />;
+                      })}
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             </div>
-
+ 
             {/* List Weights on the Right */}
-            <div className="flex-1 space-y-4 w-full">
+            <div className="flex-1 space-y-3.5 w-full">
               {breakdownItemsEx.map((item, idx) => (
-                <div key={idx} className="flex flex-col gap-1">
+                <div key={idx} className="flex flex-col gap-0.5">
                   <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider">
                     <div className="flex items-center gap-2 text-zinc-700">
                       <span 
@@ -830,72 +902,97 @@ export const AnalyticsView = ({ user }) => {
             </div>
           </div>
         </div>
-
+ 
         {/* Right Card: DETAILED SCORE BREAKDOWN (Bars) */}
         <div className="glass-card p-6 flex flex-col border border-zinc-200 bg-white shadow-xs">
           <div>
-            <h3 className="text-lg font-black text-zinc-805 tracking-tight italic uppercase">Resume Score Breakdown</h3>
-            <p className="text-zinc-450 text-xs mt-0.5 leading-relaxed font-semibold">Detailed score for each evaluation area.</p>
-
-            {/* Overall Score Summary Panel */}
-            <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 border border-zinc-200 p-4 rounded-xl text-center space-y-3.5 mt-5">
-              <div className="space-y-1">
-                <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider block font-mono">Overall Resume Score</span>
-                <div className="flex items-baseline justify-center gap-1 mt-1">
-                  <span className="text-3xl font-[1000] text-zinc-800 italic tracking-tighter leading-none">{atsScore}</span>
-                  <span className="text-xs font-bold text-zinc-400 font-mono">/100</span>
-                </div>
-                <span className={cn("text-[9px] font-black uppercase px-2.5 py-0.5 rounded-lg border mt-2 inline-block leading-none", scoreBadgeColor)}>
-                  {scoreBadgeText}
-                </span>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-2 pt-3.5 border-t border-zinc-200 text-center font-mono select-none">
-                <div className="flex flex-col items-center">
-                  <span className="text-zinc-400 text-[8px] uppercase tracking-wider font-extrabold">Skills</span>
-                  <span className="text-zinc-700 text-xs font-bold mt-1">{(activeData.skills || []).length}</span>
-                </div>
-                <div className="flex flex-col items-center border-x border-zinc-200">
-                  <span className="text-zinc-400 text-[8px] uppercase tracking-wider font-extrabold">Missing Keywords</span>
-                  <span className="text-zinc-700 text-xs font-bold mt-1">{(activeData.missingKeywords || []).length}</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-zinc-400 text-[8px] uppercase tracking-wider font-extrabold">Suggestions</span>
-                  <span className="text-zinc-700 text-xs font-bold mt-1">{(activeData.suggestions || []).length}</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Divider Line */}
-            <div className="border-b border-zinc-200 my-5" />
+            <h3 className="text-lg font-black text-zinc-800 tracking-tight italic uppercase">Category Performance Metrics</h3>
+            <p className="text-zinc-450 text-xs mt-0.5 leading-relaxed font-semibold">Detailed score comparison across resume categories.</p>
           </div>
           
-          <div className="space-y-4.5">
-            {breakdownItemsEx.map((item, idx) => {
-              const ItemIcon = item.theme.icon;
-              const scoreColor = getScoreColorInfo(item.score);
-              return (
-                <div key={idx} className="space-y-1.5 w-full">
-                  <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-zinc-750">
-                    <div className="flex items-center gap-2 max-w-[80%]">
-                      <div className={cn("w-6 h-6 rounded-md flex items-center justify-center shrink-0 border", scoreColor.classes)}>
-                        <ItemIcon className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="truncate">{item.category}</span>
-                    </div>
-                    <span className="text-zinc-800 font-[1000] text-[11px] font-mono italic">
-                      {item.score}<span className="text-[9px] text-zinc-400 font-normal">/100</span>
-                    </span>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden border border-zinc-205">
-                    <div 
-                      className={cn("h-full bg-gradient-to-r transition-all duration-1000", scoreColor.trackColor)} 
-                      style={{ width: `${item.score}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
+          <div className="h-[280px] w-full mt-4">
+            <ResponsiveContainer width="105%" height="100%">
+              <BarChart
+                layout="vertical"
+                data={breakdownItemsEx}
+                margin={{ top: 10, right: 30, left: 10, bottom: 5 }}
+              >
+                <defs>
+                  <linearGradient id="barBlueGrad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.85} />
+                    <stop offset="100%" stopColor="#2563EB" />
+                  </linearGradient>
+                  <linearGradient id="barPurpleGrad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.85} />
+                    <stop offset="100%" stopColor="#7C3AED" />
+                  </linearGradient>
+                  <linearGradient id="barCyanGrad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#06B6D4" stopOpacity={0.85} />
+                    <stop offset="100%" stopColor="#0891B2" />
+                  </linearGradient>
+                  <linearGradient id="barGreenGrad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#10B981" stopOpacity={0.85} />
+                    <stop offset="100%" stopColor="#059669" />
+                  </linearGradient>
+                  <linearGradient id="barTealGrad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#14B8A6" stopOpacity={0.85} />
+                    <stop offset="100%" stopColor="#0D9488" />
+                  </linearGradient>
+                  <linearGradient id="barOrangeGrad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.85} />
+                    <stop offset="100%" stopColor="#D97706" />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E2E8F0" />
+                <XAxis type="number" domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 10 }} />
+                <YAxis
+                  dataKey="category"
+                  type="category"
+                  axisLine={false}
+                  tickLine={false}
+                  width={110}
+                  tick={({ x, y, payload }) => {
+                    const item = breakdownItemsEx.find(b => b.category === payload.value);
+                    const color = item ? item.theme.color : '#64748B';
+                    return (
+                      <g transform={`translate(${x - 110},${y - 12})`}>
+                        <foreignObject width={105} height={24}>
+                          <div className="flex items-center gap-1.5 h-full justify-end pr-1 truncate">
+                            <span className="text-[10px] font-bold text-slate-600 truncate uppercase mt-0.5" title={payload.value}>
+                              {payload.value}
+                            </span>
+                            <span 
+                              className="w-2 h-2 rounded-full shrink-0" 
+                              style={{ backgroundColor: color }}
+                            />
+                          </div>
+                        </foreignObject>
+                      </g>
+                    );
+                  }}
+                />
+                <Tooltip content={<CategoryTooltip />} cursor={{ fill: 'rgba(241,245,249,0.4)', radius: 4 }} />
+                <Bar 
+                  dataKey="score" 
+                  radius={[0, 6, 6, 0]} 
+                  barSize={12}
+                  isAnimationActive={true}
+                  animationDuration={1005}
+                >
+                  {breakdownItemsEx.map((entry, index) => {
+                    const norm = (entry.category || '').toLowerCase();
+                    let gradId = 'url(#barOrangeGrad)';
+                    if (norm.includes('skill') || norm.includes('competenc') || norm.includes('language') || norm.includes('tech')) gradId = 'url(#barBlueGrad)';
+                    else if (norm.includes('experience') || norm.includes('achievement') || norm.includes('project') || norm.includes('career') || norm.includes('histor')) gradId = 'url(#barGreenGrad)';
+                    else if (norm.includes('keyword') || norm.includes('ats') || norm.includes('term') || norm.includes('match')) gradId = 'url(#barPurpleGrad)';
+                    else if (norm.includes('format') || norm.includes('structur') || norm.includes('layout')) gradId = 'url(#barCyanGrad)';
+                    else if (norm.includes('readability') || norm.includes('clarity') || norm.includes('education') || norm.includes('academic')) gradId = 'url(#barTealGrad)';
+                    
+                    return <Cell key={`cell-${index}`} fill={gradId} />;
+                  })}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
@@ -1094,41 +1191,112 @@ export const AnalyticsView = ({ user }) => {
       </div>
 
       {/* Extra helper rows: Job compatibility analysis & Trend charts */}
-      <div className="border-t border-zinc-900/80 pt-8 mt-4 space-y-8">
+      <div className="border-t border-zinc-200 pt-8 mt-4 space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
-          {/* Component 8: Job Role Compatibility */}
-          <div className="glass-card p-6 space-y-5 border border-zinc-200 bg-white shadow-xs">
+          {/* Competency Radar Chart */}
+          <div className="glass-card p-6 space-y-5 border border-zinc-200 bg-white flex flex-col justify-between shadow-xs">
             <div>
-              <h3 className="text-md font-black text-zinc-800 uppercase tracking-widest">Job Role Compatibility</h3>
-              <p className="text-zinc-450 text-xs mt-0.5">Weighted compatibility alignments evaluated against adjacent industry categories.</p>
+              <h3 className="text-md font-black text-zinc-800 uppercase tracking-widest">Resume Competency Dimensions</h3>
+              <p className="text-zinc-500 text-xs mt-0.5 leading-relaxed font-semibold">Skill coverage & profile dimension spread from extracted credentials.</p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {compatibilityRoles.map((roleItem, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-zinc-200 hover:border-zinc-300 transition-colors">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-[10px] text-primary uppercase">
-                      {roleItem.role.substring(0, 2)}
-                    </div>
-                    <span className="text-xs font-bold text-zinc-700 truncate max-w-[120px]">{roleItem.role}</span>
-                  </div>
-                  <span className="text-xs font-black text-primary bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
-                    {roleItem.percentage}%
-                  </span>
-                </div>
-              ))}
+            
+            <div className="h-[260px] w-full mt-4 flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart cx="50%" cy="50%" outerRadius="72%" data={breakdownItemsEx}>
+                  <defs>
+                    <radialGradient id="radarPurpleGrad" cx="50%" cy="50%" r="80%">
+                      <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.05} />
+                    </radialGradient>
+                  </defs>
+                  <PolarGrid stroke="#E2E8F0" />
+                  <PolarAngleAxis dataKey="category" tick={{ fill: '#4b5563', fontSize: 9, fontWeight: 700 }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 8 }} />
+                  <Radar 
+                    name="Competency" 
+                    dataKey="score" 
+                    stroke="#8B5CF6" 
+                    strokeWidth={2}
+                    fill="url(#radarPurpleGrad)" 
+                    fillOpacity={0.6}
+                    isAnimationActive={true}
+                    animationDuration={1200}
+                  />
+                  <Tooltip content={<CategoryTooltip />} />
+                </RadarChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
-          {/* Component 6: Resume Improvement Trend */}
+          {/* Job Role Compatibility Horizontal Bar Chart */}
           <div className="glass-card p-6 space-y-5 border border-zinc-200 bg-white flex flex-col justify-between shadow-xs">
             <div>
-              <h3 className="text-md font-black text-zinc-800 tracking-tight italic uppercase">Resume Improvement Trend</h3>
-              <p className="text-zinc-500 text-xs mt-0.5">Evaluation performance chart matching score progress across scans.</p>
+              <h3 className="text-md font-black text-zinc-800 uppercase tracking-widest">Job Role Compatibility</h3>
+              <p className="text-zinc-450 text-xs mt-0.5 leading-relaxed font-semibold">Match score estimation against adjacent industry positions.</p>
             </div>
-            <div className="h-[180px] w-full mt-4">
+            
+            <div className="h-[260px] w-full mt-4">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={scoreTrendData}>
+                <BarChart
+                  layout="vertical"
+                  data={compatibilityRoles}
+                  margin={{ top: 10, right: 30, left: 10, bottom: 5 }}
+                >
+                  <defs>
+                    <linearGradient id="roleBlueGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.8} />
+                      <stop offset="100%" stopColor="#1D4ED8" />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#F1F5F9" />
+                  <XAxis type="number" domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 10 }} />
+                  <YAxis
+                    dataKey="role"
+                    type="category"
+                    axisLine={false}
+                    tickLine={false}
+                    width={110}
+                    tick={({ x, y, payload }) => (
+                      <g transform={`translate(${x - 110},${y - 12})`}>
+                        <foreignObject width={105} height={24}>
+                          <div className="flex items-center h-full justify-end pr-1 truncate text-right">
+                            <span className="text-[10px] font-bold text-slate-600 truncate uppercase mt-0.5" title={payload.value}>
+                              {payload.value}
+                            </span>
+                          </div>
+                        </foreignObject>
+                      </g>
+                    )}
+                  />
+                  <Tooltip content={<MatchTooltip />} cursor={{ fill: 'rgba(241,245,249,0.3)', radius: 4 }} />
+                  <Bar 
+                    dataKey="percentage" 
+                    fill="url(#roleBlueGrad)" 
+                    radius={[0, 4, 4, 0]} 
+                    barSize={12}
+                    isAnimationActive={true}
+                    animationDuration={1100}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          {/* Component 6: Resume Improvement Trend (Area Chart) */}
+          <div className="glass-card p-6 space-y-5 border border-zinc-200 bg-white flex flex-col justify-between shadow-xs">
+            <div>
+              <h3 className="text-md font-black text-zinc-805 tracking-tight italic uppercase">Resume Improvement Trend</h3>
+              <p className="text-zinc-500 text-xs mt-0.5 leading-relaxed font-semibold">Visual tracking of your overall TS index across all history scans.</p>
+            </div>
+            
+            <div className="h-[210px] w-full mt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={scoreTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="trendScoreGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.35}/>
@@ -1147,17 +1315,56 @@ export const AnalyticsView = ({ user }) => {
                     hide
                     domain={['auto', 'auto']}
                   />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<ScoreTooltip />} />
                   <Area 
                     type="monotone" 
                     dataKey="score" 
                     stroke="#8B5CF6" 
-                    strokeWidth={4}
+                    strokeWidth={3}
                     fillOpacity={1} 
                     fill="url(#trendScoreGrad)" 
-                    animationDuration={1500}
+                    isAnimationActive={true}
+                    animationDuration={1300}
                   />
                 </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Component 7: Job Match Optimization Progression (Line Chart) */}
+          <div className="glass-card p-6 space-y-5 border border-zinc-200 bg-white flex flex-col justify-between shadow-xs">
+            <div>
+              <h3 className="text-md font-black text-zinc-800 tracking-tight italic uppercase">Job Match Optimization</h3>
+              <p className="text-zinc-500 text-xs mt-0.5 leading-relaxed font-semibold">Visual progression of your estimated job description compatibility score.</p>
+            </div>
+            
+            <div className="h-[210px] w-full mt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={matchTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <XAxis 
+                    dataKey="label" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#71717a', fontSize: 11, fontWeight: 900 }}
+                    dy={10}
+                  />
+                  <YAxis 
+                    hide
+                    domain={['auto', 'auto']}
+                  />
+                  <Tooltip content={<MatchTooltip />} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="match" 
+                    stroke="#10B981" 
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: '#ffffff', stroke: '#10B981', strokeWidth: 2 }}
+                    activeDot={{ r: 6, fill: '#10B981', stroke: '#ffffff', strokeWidth: 2 }}
+                    isAnimationActive={true}
+                    animationDuration={1300}
+                  />
+                </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
