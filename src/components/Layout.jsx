@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const Layout = ({ children, activeView, onViewChange, user }) => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
   const viewTitles = {
     upload: 'Resume Analysis',
     results: 'Analysis Results',
@@ -15,7 +17,13 @@ export const Layout = ({ children, activeView, onViewChange, user }) => {
 
   return (
     <div className="flex bg-[#F7F9FC] min-h-screen">
-      <Sidebar activeView={activeView} onViewChange={onViewChange} user={user} />
+      <Sidebar 
+        activeView={activeView} 
+        onViewChange={onViewChange} 
+        user={user} 
+        isCollapsed={isCollapsed} 
+        onToggleCollapse={() => setIsCollapsed(!isCollapsed)} 
+      />
       
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <Header title={viewTitles[activeView]} user={user} onViewChange={onViewChange} />

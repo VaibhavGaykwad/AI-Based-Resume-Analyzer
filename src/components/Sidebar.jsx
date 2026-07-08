@@ -1,27 +1,44 @@
 import React from 'react';
-import { LayoutDashboard, BarChart3, Upload, User, Settings, LogOut, FileText, History } from 'lucide-react';
-
+import { LayoutDashboard, BarChart3, Upload, User, Settings, LogOut, History, ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 
-const NavItem = ({ icon: Icon, label, active, onClick }) => (
+const NavItem = ({ icon: Icon, label, active, onClick, isCollapsed }) => (
   <button
     onClick={onClick}
+    title={isCollapsed ? label : undefined}
     className={cn(
-      "flex items-center w-full gap-3 px-4 py-3 rounded-xl transition-all duration-200 group border text-left cursor-pointer",
+      "flex items-center w-full gap-3 px-3.5 py-3 rounded-xl transition-all duration-200 group border text-left cursor-pointer relative",
       active 
-        ? "bg-gradient-to-r from-primary to-primary-dark border-transparent text-white shadow-md shadow-primary/20" 
-        : "border-transparent text-zinc-500 hover:text-zinc-800 hover:bg-slate-50"
+        ? "bg-gradient-to-r from-blue-600 to-purple-600 border-transparent text-white shadow-sm shadow-blue-500/10" 
+        : "border-transparent text-zinc-500 hover:text-zinc-800 hover:bg-white hover:border-zinc-200/60 hover:shadow-2xs"
     )}
   >
-    <Icon className={cn("w-5 h-5 transition-transform duration-200", active ? "scale-110 text-white" : "group-hover:scale-110 text-zinc-400 group-hover:text-zinc-650")} />
-    <span className="font-semibold text-sm">{label}</span>
-    {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" />}
+    <Icon className={cn("w-5 h-5 transition-transform duration-200 shrink-0", active ? "scale-105 text-white" : "group-hover:scale-105 text-zinc-400 group-hover:text-zinc-650")} />
+    
+    <AnimatePresence mode="wait">
+      {!isCollapsed && (
+        <motion.span 
+          initial={{ opacity: 0, width: 0 }}
+          animate={{ opacity: 1, width: 'auto' }}
+          exit={{ opacity: 0, width: 0 }}
+          transition={{ duration: 0.15 }}
+          className="font-bold text-sm select-none whitespace-nowrap overflow-hidden"
+        >
+          {label}
+        </motion.span>
+      )}
+    </AnimatePresence>
+    
+    {!isCollapsed && active && (
+      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+    )}
   </button>
 );
 
-export const Sidebar = ({ activeView, onViewChange, user }) => {
+export const Sidebar = ({ activeView, onViewChange, user, isCollapsed, onToggleCollapse }) => {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
@@ -31,60 +48,128 @@ export const Sidebar = ({ activeView, onViewChange, user }) => {
   };
 
   return (
-    <aside className="w-64 h-screen sticky top-0 border-r border-zinc-200 bg-white flex flex-col p-4">
-      <div className="flex flex-col gap-1 px-2 mb-10">
-        <h1 className="font-black text-2xl tracking-tighter text-primary leading-none uppercase italic">ResuAI</h1>
-        <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-[0.2em]">Intelligence Layer</p>
+    <motion.aside
+      animate={{ width: isCollapsed ? 76 : 256 }}
+      transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+      className="h-screen sticky top-0 border-r border-zinc-200 bg-[#F8FAFC] flex flex-col p-4 shrink-0 overflow-visible z-40 select-none"
+    >
+      {/* Collapse Toggle Button */}
+      <button
+        onClick={onToggleCollapse}
+        className="absolute top-6 -right-3 w-6 h-6 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-500 hover:text-zinc-800 hover:border-zinc-300 shadow-2xs cursor-pointer z-50 transition-all hover:scale-105 active:scale-95"
+      >
+        {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+      </button>
+
+      {/* Brand Profile Logo */}
+      <div className={cn("flex items-center gap-3 px-2 mb-10 shrink-0", isCollapsed ? "justify-center" : "")}>
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-white font-black text-lg shadow-sm shrink-0">
+          R
+        </div>
+        <AnimatePresence mode="wait">
+          {!isCollapsed && (
+            <motion.div
+              initial={{ opacity: 0, x: -5 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -5 }}
+              transition={{ duration: 0.15 }}
+              className="flex flex-col gap-0.5 overflow-hidden"
+            >
+              <h1 className="font-extrabold text-base tracking-tight text-zinc-800 uppercase leading-none">ResuAI</h1>
+              <p className="text-[8px] text-zinc-400 font-extrabold uppercase tracking-widest">Intelligence Layer</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      <nav className="flex-1 space-y-1.5">
-        <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] px-4 mb-3">Main Navigation</div>
+      {/* Navigation Options */}
+      <nav className="flex-1 space-y-1.5 overflow-y-auto overflow-x-hidden py-1">
+        {!isCollapsed && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="text-[9px] font-black text-zinc-400 uppercase tracking-widest px-4 mb-3"
+          >
+            Main Navigation
+          </motion.div>
+        )}
         <NavItem 
           icon={Upload} 
           label="Analyze Resume" 
           active={activeView === 'upload'} 
           onClick={() => onViewChange('upload')} 
+          isCollapsed={isCollapsed}
         />
         <NavItem 
           icon={LayoutDashboard} 
           label="Results" 
           active={activeView === 'results'} 
           onClick={() => onViewChange('results')} 
+          isCollapsed={isCollapsed}
         />
         <NavItem 
           icon={BarChart3} 
           label="Analytics" 
           active={activeView === 'analytics'} 
           onClick={() => onViewChange('analytics')} 
+          isCollapsed={isCollapsed}
         />
         <NavItem 
           icon={History} 
           label="History" 
           active={activeView === 'history'} 
           onClick={() => onViewChange('history')} 
+          isCollapsed={isCollapsed}
         />
       </nav>
 
-      <div className="mt-auto pt-4 border-t border-zinc-100 space-y-1">
-        <div className="flex items-center gap-3 px-4 py-3 mb-2 rounded-xl bg-white border border-zinc-205 shadow-sm">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-            {user?.email?.[0].toUpperCase()}
-          </div>
-          <div className="flex-1 min-w-0 text-[10px]">
-            <p className="text-zinc-400 font-bold uppercase tracking-wider leading-none mb-1">Signed in as</p>
-            <p className="text-zinc-700 font-semibold truncate text-[11px]">{user?.email}</p>
-          </div>
-        </div>
-        <NavItem icon={User} label="Profile" active={activeView === 'profile'} onClick={() => onViewChange('profile')} />
-        <NavItem icon={Settings} label="Settings" active={activeView === 'settings'} onClick={() => onViewChange('settings')} />
+      {/* User / Settings Footer block */}
+      <div className="mt-auto pt-4 border-t border-zinc-200/80 space-y-1 shrink-0">
+        <AnimatePresence mode="wait">
+          {!isCollapsed ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.15 }}
+              className="flex items-center gap-3 px-3 py-3 mb-2 rounded-2xl bg-white border border-zinc-200 shadow-2xs"
+            >
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0 select-none">
+                {user?.email?.[0].toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0 text-[10px]">
+                <p className="text-zinc-400 font-extrabold uppercase tracking-wider leading-none mb-1 select-none">Signed in</p>
+                <p className="text-zinc-700 font-bold truncate text-[11px]">{user?.email}</p>
+              </div>
+            </motion.div>
+          ) : (
+            <div className="flex justify-center mb-2">
+              <div 
+                className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs select-none hover:scale-105 transition-transform" 
+                title={user?.email}
+              >
+                {user?.email?.[0].toUpperCase()}
+              </div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        <NavItem icon={User} label="Profile" active={activeView === 'profile'} onClick={() => onViewChange('profile')} isCollapsed={isCollapsed} />
+        <NavItem icon={Settings} label="Settings" active={activeView === 'settings'} onClick={() => onViewChange('settings')} isCollapsed={isCollapsed} />
+        
         <button 
           onClick={handleSignOut}
-          className="flex items-center w-full gap-3 px-4 py-3 text-zinc-500 hover:text-red-500 transition-colors mt-2 group text-left cursor-pointer"
+          title={isCollapsed ? "Sign Out" : undefined}
+          className={cn(
+            "flex items-center w-full gap-3 px-3.5 py-3 text-zinc-500 hover:text-red-650 transition-colors mt-2 group text-left cursor-pointer rounded-xl hover:bg-red-50/50",
+            isCollapsed ? "justify-center" : ""
+          )}
         >
-          <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform text-zinc-400 group-hover:text-red-550" />
-          <span className="font-semibold text-sm">Sign Out</span>
+          <LogOut className="w-5 h-5 group-hover:translate-x-0.5 transition-transform text-zinc-400 group-hover:text-red-500 shrink-0" />
+          {!isCollapsed && <span className="font-bold text-sm select-none">Sign Out</span>}
         </button>
       </div>
-    </aside>
+    </motion.aside>
   );
 };
