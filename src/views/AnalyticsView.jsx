@@ -16,20 +16,168 @@ import { getUserAnalyses } from '../utils/firestoreService';
 
 const COLORS = ['#3B82F6', '#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444'];
 
-const SummaryCard = ({ icon: Icon, title, value, badgeText, badgeColor, iconColor }) => {
+const Sparkline = ({ data, color = "#8B5CF6" }) => {
+  if (!data || data.length < 2) return null;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min === 0 ? 1 : max - min;
+  const width = 80;
+  const height = 24;
+  const points = data.map((val, index) => {
+    const x = (index / (data.length - 1)) * width;
+    const y = height - ((val - min) / range) * (height - 6) - 3;
+    return `${x},${y}`;
+  }).join(' ');
+
   return (
-    <div className="glass-card p-5 flex items-center gap-4 border border-zinc-200 bg-white hover:border-primary/20 transition-all group shadow-xs">
-      <div className={cn("w-12 h-12 rounded-xl shrink-0 flex items-center justify-center border", iconColor)}>
-        <Icon className="w-5 h-5" />
+    <svg width={width} height={height} className="overflow-visible select-none">
+      <polyline
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={points}
+      />
+    </svg>
+  );
+};
+
+const AnimatedCounter = ({ value, duration = 800, suffix = "" }) => {
+  const numericVal = parseFloat(value);
+  const [current, setCurrent] = useState(isNaN(numericVal) ? value : 0);
+
+  useEffect(() => {
+    if (isNaN(numericVal)) {
+      setCurrent(value);
+      return;
+    }
+    
+    let start = 0;
+    const end = numericVal;
+    if (start === end) {
+      setCurrent(value);
+      return;
+    }
+
+    const isFloat = value.toString().includes('.');
+    const startTime = performance.now();
+
+    const updateCounter = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1.0); 
+
+      // easeOutQuad: f(t) = t * (2 - t)
+      const easeProgress = progress * (2 - progress);
+      const currentVal = start + easeProgress * (end - start);
+
+      if (isFloat) {
+        setCurrent(currentVal.toFixed(1));
+      } else {
+        setCurrent(Math.round(currentVal));
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(updateCounter);
+      } else {
+        setCurrent(value);
+      }
+    };
+
+    requestAnimationFrame(updateCounter);
+  }, [value, duration]);
+
+  return <span>{current}{suffix}</span>;
+};
+
+const KPICard = ({ title, icon: Icon, value, suffix = "", trend, trendDirection, sparklineData, colorTheme, description }) => {
+  const themes = {
+    blue: {
+      gradient: "from-blue-500 to-indigo-500",
+      bgLight: "bg-blue-50/50",
+      border: "border-blue-100",
+      text: "text-blue-600",
+      sparkline: "#3B82F6",
+      glow: "hover:shadow-blue-500/5 hover:border-blue-200"
+    },
+    purple: {
+      gradient: "from-purple-500 to-pink-500",
+      bgLight: "bg-purple-50/50",
+      border: "border-purple-100",
+      text: "text-purple-600",
+      sparkline: "#8B5CF6",
+      glow: "hover:shadow-purple-500/5 hover:border-purple-200"
+    },
+    cyan: {
+      gradient: "from-cyan-500 to-blue-500",
+      bgLight: "bg-cyan-50/50",
+      border: "border-cyan-100",
+      text: "text-cyan-600",
+      sparkline: "#06B6D4",
+      glow: "hover:shadow-cyan-500/5 hover:border-cyan-200"
+    },
+    green: {
+      gradient: "from-emerald-500 to-teal-500",
+      bgLight: "bg-emerald-50/50",
+      border: "border-emerald-100",
+      text: "text-emerald-600",
+      sparkline: "#10B981",
+      glow: "hover:shadow-emerald-500/5 hover:border-emerald-200"
+    },
+    orange: {
+      gradient: "from-orange-500 to-amber-500",
+      bgLight: "bg-orange-50/50",
+      border: "border-orange-100",
+      text: "text-orange-605",
+      sparkline: "#F59E0B",
+      glow: "hover:shadow-orange-500/5 hover:border-orange-200"
+    }
+  };
+
+  const currentTheme = themes[colorTheme] || themes.blue;
+
+  return (
+    <div className={cn(
+      "bg-white border border-zinc-200 rounded-2xl p-6 transition-all duration-300 flex flex-col justify-between shadow-[0_2px_8px_-3px_rgba(0,0,0,0.05),0_10px_20px_-15px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_28px_-6px_rgba(0,0,0,0.08),0_10px_20px_-15px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 group relative overflow-hidden",
+      currentTheme.glow
+    )}>
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-[11px] font-bold text-zinc-450 uppercase tracking-widest leading-none">{title}</span>
+        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-tr text-white shadow-sm shrink-0", currentTheme.gradient)}>
+          <Icon className="w-4.5 h-4.5" />
+        </div>
       </div>
-      <div className="flex-1 min-w-0">
-        <span className="text-[9px] uppercase font-bold text-zinc-400 tracking-wider block">{title}</span>
-        <h4 className="text-xl font-[1000] text-zinc-805 italic tracking-tighter leading-none mt-1 mb-1.5">{value}</h4>
-        {badgeText && (
-          <span className={cn("text-[9px] font-black uppercase px-2 py-0.5 rounded-lg border inline-block leading-none", badgeColor)}>
-            {badgeText}
+
+      <div className="flex items-baseline justify-between gap-4 mt-2 mb-3">
+        <h4 className="text-3xl font-black text-zinc-800 tracking-tight leading-none italic font-sans flex items-baseline select-none">
+          {typeof value === 'number' || !isNaN(parseFloat(value)) ? (
+            <AnimatedCounter value={value} suffix={suffix} />
+          ) : (
+            <span>{value}{suffix}</span>
+          )}
+        </h4>
+        
+        {sparklineData && sparklineData.length > 1 && (
+          <div className="h-7 flex items-end shrink-0" title="Historical Trend">
+            <Sparkline data={sparklineData} color={currentTheme.sparkline} />
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2 pt-3 border-t border-zinc-100 mt-2">
+        {trend && (
+          <span className={cn(
+            "text-[10px] font-black uppercase px-2 py-0.5 rounded-lg flex items-center gap-0.5 border leading-none shrink-0",
+            trendDirection === 'up' 
+              ? "bg-emerald-50 border-emerald-250 text-emerald-600" 
+              : "bg-zinc-50 border-zinc-200/80 text-zinc-500"
+          )}>
+            {trendDirection === 'up' ? "↑" : "↓"} {trend}
           </span>
         )}
+        <span className="text-[10px] text-zinc-450 font-semibold truncate leading-none">
+          {description}
+        </span>
       </div>
     </div>
   );
@@ -308,6 +456,31 @@ export const AnalyticsView = ({ user }) => {
     jobMatch >= 65 ? 'medium' : 'low';
 
   const scanDuration = activeData.processingTime ?? (4.5 + (activeAnalysis.id.charCodeAt(0) % 4)).toFixed(1);
+
+  // 1.5. Trend & Sparkline Calculations for KPI Cards
+  const prevAnalysis = analyses[safeIdx + 1];
+  const prevScore = prevAnalysis?.analysisData?.score;
+  const scoreDiff = prevScore ? atsScore - prevScore : 0;
+  const scoreTrendText = prevScore ? (scoreDiff >= 0 ? `+${scoreDiff} pts` : `${scoreDiff} pts`) : "Baseline";
+  const scoreTrendDir = scoreDiff >= 0 ? "up" : "down";
+
+  // Score history (chronological)
+  const scoreHistory = analyses.slice().reverse().map(a => a.analysisData?.score ?? 0);
+
+  // Job Match helper calculations for previous match and history
+  const getJobMatchForAnalysis = (analysis) => {
+    const ad = analysis?.analysisData;
+    if (!ad) return 50;
+    const score = ad.score ?? 0;
+    const missingCount = ad.missingKeywords?.length || 0;
+    return Math.max(45, Math.min(99, Math.round(100 - (missingCount * 8)) + (score % 5)));
+  };
+  const prevMatch = prevAnalysis ? getJobMatchForAnalysis(prevAnalysis) : null;
+  const matchDiff = prevMatch ? jobMatch - prevMatch : 0;
+  const matchTrendText = prevMatch ? (matchDiff >= 0 ? `+${matchDiff}%` : `${matchDiff}%`) : "Baseline";
+  const matchTrendDir = matchDiff >= 0 ? "up" : "down";
+
+  const matchHistory = analyses.slice().reverse().map(a => getJobMatchForAnalysis(a));
 
   // 2. Score Breakdown Computations
   const breakdownItems = activeData.scoreBreakdown?.map(item => ({
@@ -730,46 +903,58 @@ export const AnalyticsView = ({ user }) => {
       {/* Middle Grid Item: Resume Overview Bar */}
       <div className="space-y-4">
         <h3 className="text-[10px] uppercase font-bold text-zinc-550 tracking-[0.25em]">Resume Overview</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          <SummaryCard 
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+          <KPICard 
             icon={Activity} 
             title="ATS Score" 
-            value={`${atsScore}/100`} 
-            badgeText={scoreBadgeText} 
-            badgeColor={scoreBadgeColor} 
-            iconColor="bg-emerald-500/10 border-emerald-500/20 text-emerald-400" 
+            value={atsScore} 
+            suffix="/100" 
+            trend={scoreTrendText} 
+            trendDirection={scoreTrendDir} 
+            sparklineData={scoreHistory} 
+            colorTheme="purple" 
+            description={prevScore ? "vs previous scan" : "first scan baseline"} 
           />
-          <SummaryCard 
+          <KPICard 
             icon={Shield} 
             title="Resume Quality" 
             value={resumeStrength} 
-            badgeText={qualityBadgeText} 
-            badgeColor={qualityBadgeColor} 
-            iconColor="bg-blue-500/10 border-blue-500/20 text-blue-400" 
+            trend={qualityBadgeText} 
+            trendDirection="up" 
+            sparklineData={scoreHistory} 
+            colorTheme="blue" 
+            description="industry benchmark" 
           />
-          <SummaryCard 
+          <KPICard 
             icon={Target} 
             title="Job Match" 
-            value={`${jobMatch}%`} 
-            badgeText={matchBadgeText} 
-            badgeColor={matchBadgeColor} 
-            iconColor="bg-purple-500/10 border-purple-500/20 text-purple-400" 
+            value={jobMatch} 
+            suffix="%" 
+            trend={matchTrendText} 
+            trendDirection={matchTrendDir} 
+            sparklineData={matchHistory} 
+            colorTheme="green" 
+            description={matchBadgeText.toLowerCase()} 
           />
-          <SummaryCard 
+          <KPICard 
             icon={FileText} 
-            title="Pages" 
-            value={`${pageCount}`} 
-            badgeText={pageBadgeText} 
-            badgeColor={pageBadgeColor} 
-            iconColor="bg-primary/10 border-primary/20 text-primary" 
+            title="Page Count" 
+            value={pageCount} 
+            suffix={pageCount === 1 ? " Page" : " Pages"} 
+            trend={pageBadgeText} 
+            trendDirection={pageCount <= 2 ? "up" : "down"} 
+            colorTheme="cyan" 
+            description={`${wordCount} total words`} 
           />
-          <SummaryCard 
+          <KPICard 
             icon={Clock} 
             title="Processing Time" 
-            value={`${scanDuration} sec`} 
-            badgeText={speedBadgeText} 
-            badgeColor={speedBadgeColor} 
-            iconColor="bg-teal-500/10 border-teal-500/20 text-teal-400" 
+            value={scanDuration} 
+            suffix="s" 
+            trend="Fast" 
+            trendDirection="up" 
+            colorTheme="orange" 
+            description="AI engine parser speed" 
           />
         </div>
       </div>
