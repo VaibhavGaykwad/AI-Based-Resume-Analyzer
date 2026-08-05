@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { db } from '../firebase';
 import {
     collection,
@@ -70,4 +71,18 @@ export async function deleteAnalysis(analysisId) {
         console.error('[deleteAnalysis] Full error:', err);
         throw err; // re-throw so caller can handle
     }
+}
+
+/**
+ * Saves a feedback item to Firestore.
+ * @param {object} feedbackData
+ * @returns {Promise<string>}
+ */
+export async function saveFeedback(feedbackData) {
+    const docRef = await addDoc(collection(db, 'feedback'), {
+        ...feedbackData,
+        createdAt: serverTimestamp(),
+        status: 'new',
+    });
+    return docRef.id;
 }

@@ -6,7 +6,7 @@ export const BadgeList = ({ items, type = 'success' }) => {
   const themes = {
     success: "bg-primary/10 text-primary border-primary/20",
     warning: "bg-amber-50 text-amber-700 border-amber-200",
-    danger: "bg-red-50 text-red-650 border-red-200",
+    danger: "bg-red-50 text-red-600 border-red-200",
     neutral: "bg-slate-50 text-zinc-500 border-zinc-200"
   };
 

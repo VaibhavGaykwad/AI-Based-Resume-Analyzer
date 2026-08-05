@@ -19,7 +19,6 @@ export const ScanningProgress = ({ onComplete, steps: customSteps, totalDuration
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const totalDuration = 8000; // 8 seconds
     const intervalTime = 100;
     const progressStep = 100 / (totalDuration / intervalTime);
 
@@ -45,7 +44,7 @@ export const ScanningProgress = ({ onComplete, steps: customSteps, totalDuration
       clearInterval(timer);
       clearInterval(stepTimer);
     };
-  }, [onComplete]);
+  }, [onComplete, totalDuration, steps.length]);
 
   return (
     <div className="w-full max-w-xl mx-auto flex flex-col items-center py-12">
@@ -54,35 +53,50 @@ export const ScanningProgress = ({ onComplete, steps: customSteps, totalDuration
         <div className="absolute inset-0 -m-4 rounded-full border border-primary/20 animate-ping" />
         <div className="absolute inset-0 -m-8 rounded-full border border-primary/10 animate-[ping_3s_linear_infinite]" />
         
-        <div className="w-24 h-24 rounded-3xl bg-white border border-zinc-200 flex items-center justify-center relative z-10 shadow-md overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />
-          <Loader2 className="w-10 h-10 text-primary animate-spin" />
+        <div className="w-36 h-48 rounded-xl bg-card-base border border-border-base flex flex-col justify-start p-4 gap-3.5 relative z-10 shadow-lg overflow-hidden select-none">
+          {/* Resume Mockup Skeleton Lines */}
+          <div className="flex items-center gap-2 border-b border-border-base/60 pb-2">
+            <div className="w-5 h-5 rounded-full bg-bg-base animate-pulse shrink-0" />
+            <div className="space-y-1 w-full">
+              <div className="h-1.5 w-16 bg-border-base rounded animate-pulse" />
+              <div className="h-1 w-20 bg-bg-base animate-pulse" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="h-1.5 w-full bg-border-base rounded animate-pulse" />
+            <div className="h-1.5 w-11/12 bg-border-base rounded animate-pulse" />
+            <div className="h-1.5 w-4/5 bg-bg-base rounded animate-pulse" />
+          </div>
+          <div className="space-y-2 pt-2 border-t border-border-base/60">
+            <div className="h-1.5 w-6/12 bg-primary/10 rounded animate-pulse" />
+            <div className="h-1.5 w-8/12 bg-bg-base rounded animate-pulse" />
+          </div>
           
           {/* Scanning Line Effect */}
           <motion.div 
             animate={{ top: ['0%', '100%', '0%'] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="absolute left-0 right-0 h-0.5 bg-primary shadow-[0_0_15px_rgba(139,92,246,0.8)] z-20"
+            transition={{ duration: 3.0, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute left-0 right-0 h-1 bg-gradient-to-r from-primary-light via-primary to-primary-light shadow-[0_0_12px_rgba(139,92,246,0.9)] z-20"
           />
         </div>
       </div>
 
       <div className="w-full space-y-8">
         <div className="text-center">
-          <h3 className="text-2xl font-bold text-zinc-850 mb-2 tracking-tight uppercase italic underline decoration-primary/30 underline-offset-8 decoration-4">Analyzing Resume</h3>
-          <p className="text-zinc-500">Our AI is processing your document to extract insights</p>
+          <h3 className="text-2xl font-bold text-text-primary mb-2 tracking-tight uppercase italic underline decoration-primary/30 underline-offset-8 decoration-4">Analyzing Resume</h3>
+          <p className="text-text-secondary">Our AI is processing your document to extract insights</p>
         </div>
 
         {/* Progress Bar */}
         <div className="space-y-4">
-          <div className="h-2 w-full bg-zinc-200 rounded-full overflow-hidden border border-zinc-100 shadow-inner">
+          <div className="h-2 w-full bg-bg-base rounded-full overflow-hidden border border-border-base shadow-inner">
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               className="h-full bg-gradient-to-r from-primary-dark via-primary to-primary-light shadow-[0_0_15px_rgba(139,92,246,0.3)]"
             />
           </div>
-          <div className="flex justify-between text-[10px] font-black text-zinc-400 uppercase tracking-widest italic">
+          <div className="flex justify-between text-[10px] font-black text-text-secondary uppercase tracking-widest italic">
             <span>{Math.round(progress)}% Processed</span>
             <span>Est. 2s remaining</span>
           </div>
@@ -101,15 +115,15 @@ export const ScanningProgress = ({ onComplete, steps: customSteps, totalDuration
                 className={cn(
                   "flex items-center gap-4 px-5 py-4 rounded-xl border transition-all duration-300",
                   isActive 
-                    ? "bg-primary/5 border-primary/30 shadow-sm translate-x-1 text-zinc-800" 
+                    ? "bg-primary/5 border-primary/30 shadow-sm translate-x-1 text-text-primary" 
                     : isCompleted 
-                      ? "bg-slate-50 border-zinc-150 text-zinc-500" 
-                      : "bg-transparent border-transparent text-zinc-400"
+                      ? "bg-bg-base/40 border-border-base/50 text-text-secondary" 
+                      : "bg-transparent border-transparent text-text-secondary/60"
                 )}
               >
                 <div className={cn(
                   "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
-                  isActive ? "bg-primary text-white shadow-[0_4px_12px_rgba(139,92,246,0.35)]" : "bg-slate-100 text-zinc-500"
+                  isActive ? "bg-primary text-white shadow-[0_4px_12px_rgba(139,92,246,0.35)]" : "bg-bg-base border border-border-base text-text-secondary"
                 )}>
                   <Icon className="w-5 h-5" />
                 </div>

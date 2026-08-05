@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Layout } from './components/Layout';
 import { UploadView } from './views/UploadView';
 import { ResultsView } from './views/ResultsView';
@@ -7,6 +7,7 @@ import { AnalyticsView } from './views/AnalyticsView';
 import { AuthView } from './views/AuthView';
 import { ProfileView } from './views/ProfileView';
 import { SettingsView } from './views/SettingsView';
+import { FeedbackView } from './views/FeedbackView';
 import { AnalysisHistory } from './components/AnalysisHistory';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -24,6 +25,26 @@ function App() {
       setInitializing(false);
     });
     return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    const persistedTheme = localStorage.getItem('app_theme');
+    const savedTheme = persistedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', savedTheme);
+
+    const savedAccent = localStorage.getItem('app_accent') || 'purple';
+    const accentsList = {
+      purple: { primary: '#8b5cf6', dark: '#7c3aed', light: '#c084fc' },
+      blue: { primary: '#3b82f6', dark: '#2563eb', light: '#60a5fa' },
+      rose: { primary: '#f43f5e', dark: '#e11d48', light: '#fda4af' },
+      emerald: { primary: '#10b981', dark: '#059669', light: '#34d399' },
+      amber: { primary: '#f59e0b', dark: '#d97706', light: '#fbbf24' },
+      cyan: { primary: '#06b6d4', dark: '#0891b2', light: '#22d3ee' }
+    };
+    const colors = accentsList[savedAccent] || accentsList.purple;
+    document.documentElement.style.setProperty('--primary-accent', colors.primary);
+    document.documentElement.style.setProperty('--primary-accent-dark', colors.dark);
+    document.documentElement.style.setProperty('--primary-accent-light', colors.light);
   }, []);
 
   // Called when a brand-new analysis finishes
@@ -86,29 +107,40 @@ function App() {
 
   return (
     <Layout activeView={activeView} onViewChange={setActiveView} user={user}>
-      {activeView === 'upload' && (
-        <UploadView onAnalysisComplete={handleAnalysisComplete} user={user} />
-      )}
-      {activeView === 'results' && (
-        <ResultsView data={analysisResult?.data} />
-      )}
-      {activeView === 'analytics' && (
-        <AnalyticsView user={user} />
-      )}
-      {activeView === 'history' && (
-        <AnalysisHistory 
-          user={user} 
-          onSelectAnalysis={handleSelectHistoricalAnalysis} 
-          onDeleteAnalysis={handleDeleteAnalysis}
-          onNavigateToUpload={() => setActiveView('upload')}
-        />
-      )}
-      {activeView === 'profile' && (
-        <ProfileView user={user} />
-      )}
-      {activeView === 'settings' && (
-        <SettingsView />
-      )}
+      <motion.div
+        key={activeView}
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.15, ease: "easeOut" }}
+        className="w-full"
+      >
+        {activeView === 'upload' && (
+          <UploadView onAnalysisComplete={handleAnalysisComplete} user={user} />
+        )}
+        {activeView === 'results' && (
+          <ResultsView data={analysisResult?.data} user={user} />
+        )}
+        {activeView === 'analytics' && (
+          <AnalyticsView user={user} />
+        )}
+        {activeView === 'history' && (
+          <AnalysisHistory 
+            user={user} 
+            onSelectAnalysis={handleSelectHistoricalAnalysis} 
+            onDeleteAnalysis={handleDeleteAnalysis}
+            onNavigateToUpload={() => setActiveView('upload')}
+          />
+        )}
+        {activeView === 'profile' && (
+          <ProfileView user={user} />
+        )}
+        {activeView === 'feedback' && (
+          <FeedbackView user={user} onViewChange={setActiveView} />
+        )}
+        {activeView === 'settings' && (
+          <SettingsView />
+        )}
+      </motion.div>
     </Layout>
   );
 }

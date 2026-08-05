@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '../utils/cn';
 
 export const ScoreGauge = ({ score }) => {
   const radius = 80;
@@ -8,6 +7,7 @@ export const ScoreGauge = ({ score }) => {
   const offset = circumference - (score / 100) * circumference;
 
   const [rotation, setRotation] = useState(0);
+  const [displayScore, setDisplayScore] = useState(0);
 
   useEffect(() => {
     let animId;
@@ -18,6 +18,37 @@ export const ScoreGauge = ({ score }) => {
     animId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animId);
   }, []);
+
+  useEffect(() => {
+    let start = 0;
+    const end = parseInt(score, 10) || 0;
+    if (start === end) {
+      const handle = setTimeout(() => setDisplayScore(end), 0);
+      return () => clearTimeout(handle);
+    }
+
+    const duration = 1000; // 1 second
+    const startTime = performance.now();
+
+    const animateCounter = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Easing out quadratic
+      const easeProgress = progress * (2 - progress);
+      const current = Math.floor(easeProgress * end);
+      
+      setDisplayScore(current);
+
+      if (progress < 1) {
+        requestAnimationFrame(animateCounter);
+      } else {
+        setDisplayScore(end);
+      }
+    };
+
+    requestAnimationFrame(animateCounter);
+  }, [score]);
 
   return (
     <div className="relative flex items-center justify-center w-48 h-48 select-none">
@@ -42,7 +73,7 @@ export const ScoreGauge = ({ score }) => {
           cx="96"
           cy="96"
           r={radius}
-          className="stroke-slate-100 fill-none"
+          className="stroke-border-base fill-none"
           strokeWidth="10"
         />
         {/* Progress Circle */}
@@ -50,12 +81,13 @@ export const ScoreGauge = ({ score }) => {
           cx="96"
           cy="96"
           r={radius}
-          className="fill-none transition-all duration-1000 ease-out"
+          className="fill-none"
           stroke="url(#scoreGradient)"
           strokeWidth="10"
           strokeDasharray={circumference}
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: offset }}
+          transition={{ duration: 1.0, ease: "easeOut" }}
           strokeLinecap="round"
         />
       </svg>
@@ -65,12 +97,12 @@ export const ScoreGauge = ({ score }) => {
         <motion.span 
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.2 }}
           className="text-5xl font-[900] tracking-tighter italic bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 bg-clip-text text-transparent"
         >
-          {score}
+          {displayScore}
         </motion.span>
-        <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-zinc-400 mt-1">ATS Score</span>
+        <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-text-secondary mt-1">ATS Score</span>
       </div>
 
       {/* Glow Effect */}

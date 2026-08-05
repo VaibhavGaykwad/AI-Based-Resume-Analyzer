@@ -58,6 +58,14 @@ export async function analyzeResume(resumeText) {
   "strengths": ["Strength 1", "Strength 2", ...],
   "skills": ["skill1", "skill2", ...],
   "missingKeywords": ["keyword1", "keyword2", ...],
+  "categoryScores": {
+    "technicalSkills": <integer 0-100>,
+    "experience": <integer 0-100>,
+    "education": <integer 0-100>,
+    "atsKeywords": <integer 0-100>,
+    "formatting": <integer 0-100>,
+    "completeness": <integer 0-100>
+  },
   "scoreBreakdown": [
     {
       "category": "Category Name",
@@ -87,6 +95,14 @@ Rules:
 - "detectedDomains": Provide an array of objects representing detected domains sorted in descending order of confidence. Each object has keys "domain" (a string naming the career domain) and "confidence" (an integer 0-100). If the resume is multi-disciplinary, include up to 2 domains (primary and secondary). Otherwise return exactly 1 domain in the array. Important rule: If the primary classification's confidence is below 70, you MUST return exactly one domain in the array: {"domain": "General Professional", "confidence": <detected score>}, and then generate generic recommendations instead of domain-specific/technical advice.
 - "domainWhy": Provide between 3 and 5 clear, brief reasons (bullet points) why this domain classification was selected. Base each reason on elements actually found in the resume text (e.g., specific languages, roles, certs, or projects).
 - "strengths": Provide between 3 and 5 positive findings (bullet points) extracted specifically from this resume such as strong leadership, excellent projects, good formatting, or quantified achievements. Never use fixed/canned strengths.
+- "categoryScores": Provide scores between 0 and 100 for each of the keys: "technicalSkills", "experience", "education", "atsKeywords", "formatting", "completeness". Specifically:
+  * "technicalSkills": Evaluation of candidate's technical skills profile.
+  * "experience": Evaluation of candidate's work history and achievements.
+  * "education": Evaluation of candidate's academic background and certifications.
+  * "atsKeywords": Evaluation of candidate's key terms alignment.
+  * "formatting": Evaluation of resume formatting, layout, alignment, and parser readability.
+  * "completeness": Evaluation of essential candidate contact profile sections matching.
+  * Mathematical constraint: The overall "score" of the resume MUST equal: (technicalSkills * 0.25) + (experience * 0.25) + (education * 0.15) + (atsKeywords * 0.15) + (formatting * 0.15) + (completeness * 0.05). Make sure the math is exactly correct, and round the sum to the nearest integer.
 - "scoreBreakdown": Generate a list of category evaluations based on the detected domain. Do NOT use hardcoded fixed categories. Provide between 4 and 6 categories relevant to the career domain. For example:
   * Software Engineering: Technical Skills, Projects, Programming Languages, ATS Keywords, Experience, Formatting.
   * Marketing: Marketing Skills, Campaign Experience, Analytics Tools, Communication, ATS Keywords, Formatting.

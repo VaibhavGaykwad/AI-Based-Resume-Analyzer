@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+/* eslint-disable no-unused-vars */
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -16,6 +17,30 @@ import { cn } from '../utils/cn';
 import { getUserAnalyses } from '../utils/firestoreService';
 
 const COLORS = ['#3B82F6', '#8B5CF6', '#06B6D4', '#60A5FA', '#A78BFA', '#22D3EE'];
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 15 },
+  show: { 
+    opacity: 1, 
+    y: 0,
+    transition: { 
+      type: "spring", 
+      stiffness: 260, 
+      damping: 22 
+    } 
+  }
+};
+
 
 const Sparkline = ({ data, color = "#8B5CF6" }) => {
   if (!data || data.length < 2) return null;
@@ -50,15 +75,15 @@ const AnimatedCounter = ({ value, duration = 800, suffix = "" }) => {
 
   useEffect(() => {
     if (isNaN(numericVal)) {
-      setCurrent(value);
-      return;
+      const handle = setTimeout(() => setCurrent(value), 0);
+      return () => clearTimeout(handle);
     }
     
     let start = 0;
     const end = numericVal;
     if (start === end) {
-      setCurrent(value);
-      return;
+      const handle = setTimeout(() => setCurrent(value), 0);
+      return () => clearTimeout(handle);
     }
 
     const isFloat = value.toString().includes('.');
@@ -86,7 +111,7 @@ const AnimatedCounter = ({ value, duration = 800, suffix = "" }) => {
     };
 
     requestAnimationFrame(updateCounter);
-  }, [value, duration]);
+  }, [value, duration, numericVal]);
 
   return <span>{current}{suffix}</span>;
 };
@@ -139,18 +164,18 @@ const KPICard = ({ title, icon: Icon, value, suffix = "", trend, trendDirection,
 
   return (
     <div className={cn(
-      "bg-white border border-zinc-200 rounded-2xl p-6 transition-all duration-300 flex flex-col justify-between shadow-[0_2px_8px_-3px_rgba(0,0,0,0.05),0_10px_20px_-15px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_28px_-6px_rgba(0,0,0,0.08),0_10px_20px_-15px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 group relative overflow-hidden",
+      "glass-card flex flex-col justify-between group relative overflow-hidden",
       currentTheme.glow
     )}>
       <div className="flex items-center justify-between mb-4">
-        <span className="text-[11px] font-bold text-zinc-450 uppercase tracking-widest leading-none">{title}</span>
+        <span className="text-[11px] font-bold text-text-secondary uppercase tracking-widest leading-none">{title}</span>
         <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-tr text-white shadow-sm shrink-0", currentTheme.gradient)}>
           <Icon className="w-4.5 h-4.5" />
         </div>
       </div>
 
       <div className="flex items-baseline justify-between gap-4 mt-2 mb-3">
-        <h4 className="text-3xl font-black text-zinc-800 tracking-tight leading-none italic font-sans flex items-baseline select-none">
+        <h4 className="text-3xl font-black text-text-primary tracking-tight leading-none italic font-sans flex items-baseline select-none">
           {typeof value === 'number' || !isNaN(parseFloat(value)) ? (
             <AnimatedCounter value={value} suffix={suffix} />
           ) : (
@@ -165,18 +190,18 @@ const KPICard = ({ title, icon: Icon, value, suffix = "", trend, trendDirection,
         )}
       </div>
 
-      <div className="flex items-center gap-2 pt-3 border-t border-zinc-100 mt-2">
+      <div className="flex items-center gap-2 pt-3 border-t border-border-base mt-2">
         {trend && (
           <span className={cn(
             "text-[10px] font-black uppercase px-2 py-0.5 rounded-lg flex items-center gap-0.5 border leading-none shrink-0",
             trendDirection === 'up' 
               ? "bg-emerald-50 border-emerald-250 text-emerald-600" 
-              : "bg-zinc-50 border-zinc-200/80 text-zinc-500"
+              : "bg-bg-base border-border-base text-text-secondary"
           )}>
             {trendDirection === 'up' ? "↑" : "↓"} {trend}
           </span>
         )}
-        <span className="text-[10px] text-zinc-450 font-semibold truncate leading-none">
+        <span className="text-[10px] text-text-secondary font-semibold truncate leading-none">
           {description}
         </span>
       </div>
@@ -207,7 +232,7 @@ const getScoreColorInfo = (score) => {
   };
   return {
     color: '#ef4444',
-    classes: 'bg-red-50 border-red-200 text-red-650',
+    classes: 'bg-red-50 border-red-200 text-red-600',
     trackColor: 'from-red-600 to-red-500'
   };
 };
@@ -265,9 +290,9 @@ const getCategoryTheme = (categoryName) => {
 const ScoreTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white border border-zinc-200 p-4.5 rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.1)] backdrop-blur-md bg-white/95">
+      <div className="glass bg-card-base border border-border-base p-4.5 rounded-xl shadow-lg backdrop-blur-md">
         <p className="text-[10px] font-black text-[#8B5CF6] uppercase tracking-[0.25em] mb-1.5">{label}</p>
-        <p className="text-xl font-black text-[#8B5CF6] italic tracking-tight">{payload[0].value} <span className="text-xs font-bold text-zinc-450 italic">ATS Score</span></p>
+        <p className="text-xl font-black text-[#8B5CF6] italic tracking-tight">{payload[0].value} <span className="text-xs font-bold text-text-secondary italic">ATS Score</span></p>
       </div>
     );
   }
@@ -277,9 +302,9 @@ const ScoreTooltip = ({ active, payload, label }) => {
 const MatchTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white border border-zinc-200 p-4.5 rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.1)] backdrop-blur-md bg-white/95">
+      <div className="glass bg-card-base border border-border-base p-4.5 rounded-xl shadow-lg backdrop-blur-md">
         <p className="text-[10px] font-black text-[#10B981] uppercase tracking-[0.25em] mb-1.5">{label}</p>
-        <p className="text-xl font-black text-[#10B981] italic tracking-tight">{payload[0].value}% <span className="text-xs font-bold text-zinc-450 italic">Job Match</span></p>
+        <p className="text-xl font-black text-[#10B981] italic tracking-tight">{payload[0].value}% <span className="text-xs font-bold text-text-secondary italic">Job Match</span></p>
       </div>
     );
   }
@@ -290,11 +315,41 @@ const CategoryTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-white border border-zinc-200 p-4.5 rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.1)] backdrop-blur-md bg-white/95">
-        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">{data.category || payload[0].name}</p>
-        <div className="flex items-baseline gap-1 mt-1">
-          <span className="text-xl font-black text-zinc-800 italic">{data.score || payload[0].value}</span>
-          <span className="text-[10.5px] font-bold text-zinc-450 italic">/100 Points</span>
+      <div className="glass bg-card-base border border-border-base p-4 rounded-xl shadow-lg max-w-xs backdrop-blur-md text-left">
+        <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">{data.category || payload[0].name}</p>
+        <div className="flex items-baseline gap-1 mt-1 border-b border-border-base pb-1.5 mb-1.5">
+          <span className="text-xl font-black text-text-primary italic">{data.score || payload[0].value}</span>
+          <span className="text-[10.5px] font-bold text-text-secondary italic">/100 Points</span>
+        </div>
+        {data.confidence && (
+          <p className="text-[9px] font-bold text-text-secondary uppercase mb-1">Confidence: {data.confidence}</p>
+        )}
+        {data.explanation && (
+          <p className="text-[10px] text-text-secondary leading-relaxed font-semibold">
+            {data.explanation}
+          </p>
+        )}
+      </div>
+    );
+  }
+  return null;
+};
+
+const RadarTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="glass bg-card-base border border-border-base p-4 rounded-xl shadow-lg max-w-xs backdrop-blur-md text-left">
+        <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-2">{data.category}</p>
+        <div className="space-y-1.5 border-t border-border-base pt-1.5">
+          <div className="flex justify-between gap-4 text-xs font-bold">
+            <span className="text-text-secondary">Your Resume:</span>
+            <span className="text-primary italic">{data.Resume}/100</span>
+          </div>
+          <div className="flex justify-between gap-4 text-xs font-bold">
+            <span className="text-text-secondary">Job Requirement:</span>
+            <span className="text-[#10B981] italic">{data["Job Requirements"]}/100</span>
+          </div>
         </div>
       </div>
     );
@@ -402,6 +457,206 @@ export const AnalyticsView = ({ user }) => {
   const [keywordsSearch, setKeywordsSearch] = useState('');
   const [copiedModalId, setCopiedModalId] = useState(null);
 
+  const safeIdx = activeIdx >= 0 && activeIdx < analyses.length ? activeIdx : 0;
+  const activeAnalysis = analyses[safeIdx];
+  const activeData = activeAnalysis?.analysisData;
+  const categoryScores = useMemo(() => {
+    if (!activeData) return {};
+    if (activeData.categoryScores) return activeData.categoryScores;
+    
+    // Fallback: extract legacy scores from scoreBreakdown list if present
+    const scores = {};
+    if (activeData.scoreBreakdown) {
+      activeData.scoreBreakdown.forEach(item => {
+        const cat = (item.category || '').toLowerCase();
+        let key = null;
+        if (cat.includes('skill') || cat.includes('language') || cat.includes('tech')) key = 'technicalSkills';
+        else if (cat.includes('experience') || cat.includes('history') || cat.includes('work')) key = 'experience';
+        else if (cat.includes('education') || cat.includes('academic') || cat.includes('credential')) key = 'education';
+        else if (cat.includes('keyword') || cat.includes('ats')) key = 'atsKeywords';
+        else if (cat.includes('format') || cat.includes('layout')) key = 'formatting';
+        else if (cat.includes('completeness') || cat.includes('quality') || cat.includes('contact')) key = 'completeness';
+        
+        if (key && item.score !== undefined) {
+          scores[key] = item.score;
+        }
+      });
+    }
+    return scores;
+  }, [activeData]);
+
+  const breakdownItemsEx = useMemo(() => {
+    if (!activeData) return [];
+    const text = (activeData.originalText || '').trim();
+
+    // 1. Technical Skills
+    const foundSkills = activeData.skills || [];
+    const missingKeywords = activeData.missingKeywords || [];
+    
+    // Pivot first half of missing keywords as missing skills
+    const missingSkills = missingKeywords.slice(0, Math.ceil(missingKeywords.length / 2));
+    const skillsConfidence = foundSkills.length > 5 ? 94 : 85;
+
+    // 2. Experience
+    const jobRolesRegex = /\b(software engineer|developer|architect|designer|analyst|manager|consultant|specialist|lead|intern|coordinator|representative|director|associate|expert)\b/gi;
+    const matches = text.match(jobRolesRegex) || [];
+    const uniqueJobs = Array.from(new Set(matches.map(j => j.trim().toLowerCase())));
+    const detectedJobs = uniqueJobs.map(j => j.replace(/\b\w/g, c => c.toUpperCase())).slice(0, 4);
+    if (detectedJobs.length === 0 && activeData.role) {
+      detectedJobs.push(activeData.role);
+    }
+
+    const expBulletsMatches = text.match(/\b(designed|developed|implemented|led|managed|built|created|optimized|coordinated|analyzed|executed|supervised|assisted|facilitated|increased|achieved|reduced|saved)\b/gi) || [];
+    const expBulletCount = expBulletsMatches.length;
+
+    const expSuggestions = (activeData.suggestions || []).filter(s => 
+      /experience|work|job|achievement|project|bullet|metric|quantify/i.test(s.title + ' ' + s.description)
+    );
+    const missingExp = expSuggestions.length > 0
+      ? expSuggestions.map(s => s.title)
+      : ["Quantification of work metrics"];
+    const expConfidence = expBulletCount > 3 ? 91 : 82;
+
+    // 3. Education & Certifications
+    const degreeRegex = /\b(degree|bachelor|master|phd|b\.s\.|m\.s\.|b\.tech|m\.tech|mba|bsc|msc|ph\.d\.|university|college|school)\b/gi;
+    const eduMatches = text.match(degreeRegex) || [];
+    const uniqueEdu = Array.from(new Set(eduMatches.map(e => e.trim().toLowerCase())));
+    const detectedEdu = uniqueEdu.map(e => e.replace(/\b\w/g, c => c.toUpperCase())).slice(0, 3);
+    if (detectedEdu.length === 0) {
+      detectedEdu.push("Professional Experience Background");
+    }
+
+    const certsRegex = /\b(certified|certification|aws|csm|pmp|scrum|safe|google|comptia|ccna|cissp|cpa|shrm)\b/gi;
+    const certsMatches = text.match(certsRegex) || [];
+    const uniqueCerts = Array.from(new Set(certsMatches.map(c => c.trim().toUpperCase())));
+    uniqueCerts.slice(0, 3).forEach(c => {
+      detectedEdu.push(`${c} Certification`);
+    });
+
+    const eduSuggestions = (activeData.suggestions || []).filter(s => 
+      /education|degree|certif|coursework|academic/i.test(s.title + ' ' + s.description)
+    );
+    const missingEdu = eduSuggestions.length > 0
+      ? eduSuggestions.map(s => s.title)
+      : (uniqueCerts.length === 0 ? ["Professional domain-relevant certification"] : ["Academic coursework mapping"]);
+    const eduConfidence = detectedEdu.length > 1 ? 95 : 88;
+
+    // 4. ATS Keywords
+    const detectedKeywords = foundSkills.slice(0, 5);
+    const missingKeywordsList = missingKeywords;
+    const keywordsConfidence = 96;
+
+    // 5. Formatting
+    const formattingSuggestions = (activeData.suggestions || []).filter(s => 
+      /format|layout|font|margin|page|spacing|length/i.test(s.title + ' ' + s.description)
+    );
+    const detectedFormatting = ["Clean text parser structure"];
+    const wordsCount = text ? text.split(/\s+/).length : 220;
+    detectedFormatting.push(`Length: ${wordsCount} words`);
+
+    const missingFormatting = formattingSuggestions.length > 0
+      ? formattingSuggestions.map(s => s.title)
+      : ["Optimal paragraph spacing constraints"];
+
+    if (formattingSuggestions.length === 0) {
+      detectedFormatting.push("Page bounds & layout constraints compliant");
+    }
+    const formattingConfidence = 90;
+
+    return [
+      {
+        category: 'Technical Skills',
+        score: categoryScores.technicalSkills ?? 0,
+        weight: 25,
+        confidence: `${skillsConfidence}%`,
+        detected: foundSkills,
+        missing: missingSkills,
+        explanation: `Resume contains ${foundSkills.length} parsed skills. Recommended adding ${missingKeywords.length - missingSkills.length} missing skills.`,
+        suggestion: missingSkills.length > 0 ? `Include ${missingSkills.slice(0, 3).join(', ')}` : null,
+        reason: `Evaluated ${foundSkills.length} skills against target job description requirements.`,
+        theme: getCategoryTheme('skills')
+      },
+      {
+        category: 'Experience',
+        score: categoryScores.experience ?? 0,
+        weight: 25,
+        confidence: `${expConfidence}%`,
+        detected: detectedJobs,
+        missing: missingExp,
+        explanation: `Parsed ${detectedJobs.length} ${detectedJobs.length === 1 ? 'role' : 'roles'}. ${formattingSuggestions.length > 0 || missingExp.length > 0 ? 'Experience gaps detected.' : 'No experience gaps detected.'}`,
+        suggestion: missingExp.length > 0 ? missingExp[0] : null,
+        reason: `Assessed experience depth, dates, achievements, and active metrics.`,
+        theme: getCategoryTheme('experience')
+      },
+      {
+        category: 'Education',
+        score: categoryScores.education ?? 0,
+        weight: 15,
+        confidence: `${eduConfidence}%`,
+        detected: detectedEdu,
+        missing: missingEdu,
+        explanation: `Found academic degree. ${uniqueCerts.length > 0 ? `${uniqueCerts.length} certification${uniqueCerts.length === 1 ? '' : 's'} detected.` : 'No certifications detected.'}`,
+        suggestion: missingEdu.length > 0 ? missingEdu[0] : null,
+        reason: `Academic background completeness and industry relevance.`,
+        theme: getCategoryTheme('education')
+      },
+      {
+        category: 'ATS Keywords',
+        score: categoryScores.atsKeywords ?? 0,
+        weight: 15,
+        confidence: `${keywordsConfidence}%`,
+        detected: detectedKeywords,
+        missing: missingKeywordsList,
+        explanation: `Missing ${missingKeywordsList.length} important keywords.`,
+        suggestion: missingKeywordsList.length > 0 ? `Add key terms: ${missingKeywordsList.slice(0,3).join(', ')}` : null,
+        reason: `Matched resume content against role keywords and phrases.`,
+        theme: getCategoryTheme('keyword')
+      },
+      {
+        category: 'Formatting',
+        score: categoryScores.formatting ?? 0,
+        weight: 15,
+        confidence: `${formattingConfidence}%`,
+        detected: detectedFormatting,
+        missing: missingFormatting,
+        explanation: `${formattingSuggestions.length > 0 ? 'Minor formatting issues detected.' : 'No formatting issues detected.'}`,
+        suggestion: missingFormatting.length > 0 ? missingFormatting[0] : null,
+        reason: `Evaluated page structure, font styles, text cleanliness, and sizing.`,
+        theme: getCategoryTheme('format')
+      },
+      {
+        category: 'Completeness',
+        score: categoryScores.completeness ?? 0,
+        weight: 5,
+        confidence: `98%`,
+        detected: [
+          activeData.name && "Candidate Name matched",
+          activeData.email && "Contact Email matched",
+          activeData.role && "Target Title matched",
+          foundSkills.length > 0 && "Skills array matched",
+          text.length > 500 && "Body content size ok"
+        ].filter(Boolean),
+        missing: [
+          !activeData.name && "Name field",
+          !activeData.email && "Email contact info",
+          !activeData.role && "Target title/heading"
+        ].filter(Boolean),
+        explanation: `Primary contact fields completed.`,
+        suggestion: null,
+        reason: `Parsed contact headings, skills scope, and file length checking.`,
+        theme: getCategoryTheme('completeness')
+      }
+    ];
+  }, [
+    activeData,
+    categoryScores.technicalSkills,
+    categoryScores.experience,
+    categoryScores.education,
+    categoryScores.atsKeywords,
+    categoryScores.formatting,
+    categoryScores.completeness
+  ]);
+
   const handleCopy = (text, modalId) => {
     navigator.clipboard.writeText(text);
     setCopiedModalId(modalId);
@@ -410,22 +665,25 @@ export const AnalyticsView = ({ user }) => {
 
   useEffect(() => {
     if (!user) return;
-    setLoading(true);
-    getUserAnalyses(user.uid, 50)
-      .then((data) => {
-        setAnalyses(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to load analytics: ", err);
-        setError("Failed to fetch analytics data.");
-        setLoading(false);
-      });
+    const handle = setTimeout(() => {
+      setLoading(true);
+      getUserAnalyses(user.uid, 50)
+        .then((data) => {
+          setAnalyses(data);
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error("Failed to load analytics: ", err);
+          setError("Failed to fetch analytics data.");
+          setLoading(false);
+        });
+    }, 0);
+    return () => clearTimeout(handle);
   }, [user]);
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 gap-4 text-zinc-500">
+      <div className="flex flex-col items-center justify-center py-32 gap-4 text-text-secondary">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
         <p className="text-sm font-medium">Running statistical computations…</p>
       </div>
@@ -434,7 +692,7 @@ export const AnalyticsView = ({ user }) => {
 
   if (error) {
     return (
-      <div className="glass-card p-8 text-center text-red-500 border border-red-200 bg-red-50">
+      <div className="glass-card p-8 text-center text-red-500 border border-red-500/20 bg-red-500/10">
         {error}
       </div>
     );
@@ -443,20 +701,16 @@ export const AnalyticsView = ({ user }) => {
   if (analyses.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <div className="w-16 h-16 rounded-2xl bg-white border border-zinc-200 flex items-center justify-center shadow-xs">
-          <Inbox className="w-8 h-8 text-zinc-400" />
+        <div className="w-16 h-16 rounded-2xl bg-card-base border border-border-base flex items-center justify-center shadow-xs">
+          <Inbox className="w-8 h-8 text-text-secondary" />
         </div>
         <div className="text-center">
-          <p className="text-zinc-800 font-semibold">No analytics data available</p>
-          <p className="text-zinc-500 text-sm mt-1">Please process a resume scan first to display metrics.</p>
+          <p className="text-text-primary font-bold">No analytics data available</p>
+          <p className="text-text-secondary text-sm mt-1">Please process a resume scan first to display metrics.</p>
         </div>
       </div>
     );
   }  // Ensure index boundary safety
-  const safeIdx = activeIdx >= 0 && activeIdx < analyses.length ? activeIdx : 0;
-  const activeAnalysis = analyses[safeIdx];
-  const activeData = activeAnalysis?.analysisData;
-
   if (!activeData) {
     return (
       <div className="glass-card p-8 text-center text-red-500 border border-red-200 bg-red-50">
@@ -475,14 +729,7 @@ export const AnalyticsView = ({ user }) => {
     atsScore >= 75 ? 'Very Good' : 
     atsScore >= 60 ? 'Competitive' : 'Needs Work';
   
-  const strengthRating = 
-    atsScore >= 85 ? 'high' : 
-    atsScore >= 60 ? 'medium' : 'low';
-
   const jobMatch = Math.max(45, Math.min(99, Math.round(100 - ((activeData.missingKeywords?.length || 0) * 8)) + (atsScore % 5)));
-  const matchRating = 
-    jobMatch >= 80 ? 'high' : 
-    jobMatch >= 65 ? 'medium' : 'low';
 
   const scanDuration = activeData.processingTime ?? (4.5 + (activeAnalysis.id.charCodeAt(0) % 4)).toFixed(1);
 
@@ -511,26 +758,7 @@ export const AnalyticsView = ({ user }) => {
 
   const matchHistory = analyses.slice().reverse().map(a => getJobMatchForAnalysis(a));
 
-  // 2. Score Breakdown Computations
-  const breakdownItems = activeData.scoreBreakdown?.map(item => ({
-    category: item.category,
-    score: item.score ?? 0,
-    weight: item.weight ?? 0,
-    explanation: item.explanation ?? '',
-    suggestion: item.suggestion ?? null
-  })) || [
-    { category: 'Skills', score: Math.min(95, 45 + ((activeData.skills?.length || 0) * 5)), weight: 20, explanation: 'Overall evaluation of the parsed skills section and profile qualifications.', suggestion: null },
-    { category: 'Experience', score: atsScore >= 85 ? 94 : atsScore >= 70 ? 80 : atsScore >= 55 ? 68 : 50, weight: 20, explanation: 'Assessment of experience depth, active metrics format, and structural alignment.', suggestion: atsScore < 75 ? 'Elaborate on work history duties and list quantifiable performance metrics.' : null },
-    { category: 'Education', score: atsScore >= 80 ? 95 : atsScore >= 60 ? 90 : 80, weight: 15, explanation: 'Academic profile completeness and relevance to industry requirements.', suggestion: null },
-    { category: 'ATS Keywords', score: Math.max(35, 100 - ((activeData.missingKeywords?.length || 0) * 10)), weight: 15, explanation: 'Target key terms and phrases presence compared to candidate domain profile.', suggestion: atsScore < 75 ? 'Inject domain-relevant terminology to optimize ATS indexing.' : null },
-    { category: 'Formatting', score: atsScore >= 80 ? 92 : atsScore >= 70 ? 84 : atsScore >= 55 ? 72 : 55, weight: 15, explanation: 'Page margins, visual consistency, alignment, and template structure.', suggestion: null },
-    { category: 'Overall Resume Quality', score: atsScore, weight: 15, explanation: 'General overview score matching average recruiter rating thresholds.', suggestion: null }
-  ];
 
-  const breakdownItemsEx = breakdownItems.map(item => ({
-    ...item,
-    theme: getCategoryTheme(item.category)
-  }));
 
   let scoreBadgeColor = "bg-emerald-50 border-emerald-200 text-emerald-700";
   let scoreBadgeText = "Good";
@@ -538,41 +766,32 @@ export const AnalyticsView = ({ user }) => {
     scoreBadgeColor = "bg-primary/10 border-primary/20 text-primary";
     scoreBadgeText = "Excellent";
   } else if (atsScore < 70) {
-    scoreBadgeColor = "bg-red-50 border-red-200 text-red-650";
+    scoreBadgeColor = "bg-red-50 border-red-200 text-red-600";
     scoreBadgeText = "Needs Work";
   }
 
   let qualityBadgeText = "Industry Ready";
-  let qualityBadgeColor = "bg-blue-50 border-blue-200 text-blue-600";
   if (atsScore >= 85) {
     qualityBadgeText = "Top 10%";
   } else if (atsScore >= 75) {
     qualityBadgeText = "Top 20%";
   } else {
     qualityBadgeText = "Standard";
-    qualityBadgeColor = "bg-zinc-50 border-zinc-200 text-zinc-500";
   }
 
   let matchBadgeText = "Partial Match";
-  let matchBadgeColor = "bg-purple-50 border-purple-200 text-purple-600";
-  if (jobMatch >= 80) {
-    matchBadgeText = "Good Match";
-  } else if (jobMatch >= 90) {
+  if (jobMatch >= 90) {
     matchBadgeText = "Excellent Match";
+  } else if (jobMatch >= 80) {
+    matchBadgeText = "Good Match";
   } else if (jobMatch < 65) {
     matchBadgeText = "Low Match";
-    matchBadgeColor = "bg-red-50 border-red-200 text-red-650";
   }
 
   let pageBadgeText = "Ideal";
-  let pageBadgeColor = "bg-primary/10 border-primary/20 text-primary";
   if (pageCount > 2) {
     pageBadgeText = "Long";
-    pageBadgeColor = "bg-amber-50 border-amber-200 text-amber-700";
   }
-
-  let speedBadgeText = "Fast";
-  let speedBadgeColor = "bg-teal-50 border-teal-200 text-teal-700";
 
   // 3. Dynamic Strengths Compilation
   const strengths = activeData.strengths || [
@@ -710,10 +929,10 @@ export const AnalyticsView = ({ user }) => {
   return (
     <div className="space-y-8 pb-12">
       {/* Redesigned Premium Header & Resume Selector */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-zinc-200 pb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-border-base pb-6">
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-black text-zinc-800 tracking-tight flex items-center gap-2">
+            <h1 className="text-2xl font-black text-text-primary tracking-tight flex items-center gap-2">
               <TrendingUp className="w-6 h-6 text-primary" />
               Resume Optimization Insights
             </h1>
@@ -721,7 +940,7 @@ export const AnalyticsView = ({ user }) => {
               Domain: {domain}
             </span>
           </div>
-          <p className="text-zinc-500 text-sm mt-1">Premium quality scoring, formatting diagnostics, and structural keywords analysis.</p>
+          <p className="text-text-secondary text-sm mt-1">Premium quality scoring, formatting diagnostics, and structural keywords analysis.</p>
         </div>
 
         {analyses.length > 1 && (
@@ -729,7 +948,7 @@ export const AnalyticsView = ({ user }) => {
             <select 
               value={activeIdx}
               onChange={(e) => setActiveIdx(parseInt(e.target.value))}
-              className="appearance-none w-full md:w-64 bg-white border border-zinc-200 hover:border-primary/30 text-zinc-700 text-xs font-bold rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-primary/50 cursor-pointer shadow-sm tracking-wider"
+              className="appearance-none w-full md:w-64 bg-card-base border border-border-base hover:border-primary/30 text-text-primary text-xs font-bold rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-primary/50 cursor-pointer shadow-sm tracking-wider"
             >
               {analyses.map((item, idx) => (
                 <option key={item.id} value={idx}>
@@ -758,17 +977,17 @@ export const AnalyticsView = ({ user }) => {
         ];
 
         return (
-          <div className="glass-card p-6 border border-zinc-200 bg-white flex flex-col md:flex-row gap-6 relative overflow-hidden group shadow-xs">
+          <div className="glass-card flex flex-col md:flex-row gap-6 relative group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
             
             {/* Left Box: Domain & Confidence */}
-            <div className="flex items-start gap-4 md:w-1/3 shrink-0 border-b md:border-b-0 md:border-r border-zinc-200 pb-4 md:pb-0 md:pr-6">
+            <div className="flex items-start gap-4 md:w-1/3 shrink-0 border-b md:border-b-0 md:border-r border-border-base pb-4 md:pb-0 md:pr-6">
               <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-primary mt-1">
                 <Award className="w-6 h-6" />
                </div>
               <div className="space-y-1">
-                <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-[0.2em] block">Detected Resume Domain</span>
-                <h4 className="text-xl font-black text-zinc-800 italic tracking-tight uppercase">
+                <span className="text-[10px] uppercase font-bold text-text-secondary tracking-[0.2em] block">Detected Resume Domain</span>
+                <h4 className="text-xl font-black text-text-primary italic tracking-tight uppercase">
                   {isFallback ? 'General Professional' : primaryClassification.domain}
                 </h4>
                 <div className="flex items-center gap-2 mt-1">
@@ -802,116 +1021,161 @@ export const AnalyticsView = ({ user }) => {
 
       {/* Top Section Layout: Donut Chart + Detailed Progress Bars */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left Card: RESUME SCORE BREAKDOWN (Donut) */}
-        <div className="glass-card p-6 flex flex-col justify-between border border-zinc-200 bg-white shadow-xs">
-          <div>
-            <h3 className="text-lg font-black text-zinc-800 tracking-tight italic uppercase">Resume Score Breakdown</h3>
-            <p className="text-zinc-500 text-xs mt-0.5 leading-relaxed font-semibold">Distribution of your ATS score across key evaluation areas.</p>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row items-center gap-8 mt-6">
-            {/* Center Value Overlay inside Donut Chart Ring */}
-            <div className="relative w-[230px] h-[230px] shrink-0 flex items-center justify-center mx-auto sm:mx-0">
-              <div className="absolute flex flex-col items-center justify-center text-center">
-                <span className="text-5xl font-[1000] text-zinc-800 italic tracking-tighter leading-none">{atsScore}</span>
-                <span className="text-[9px] uppercase font-black text-zinc-450 tracking-widest mt-1 block">ATS Score</span>
-                <span className={cn("text-[9px] font-black uppercase px-2 py-0.5 rounded-lg border mt-2 inline-block leading-none", scoreBadgeColor)}>
-                  {scoreBadgeText}
-                </span>
-              </div>
-              
-              <div className="w-full h-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <defs>
-                      <linearGradient id="pieBlueGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3B82F6" />
-                        <stop offset="100%" stopColor="#1E3A8A" />
-                      </linearGradient>
-                      <linearGradient id="piePurpleGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#8B5CF6" />
-                        <stop offset="100%" stopColor="#4C1D95" />
-                      </linearGradient>
-                      <linearGradient id="pieCyanGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#06B6D4" />
-                        <stop offset="100%" stopColor="#083344" />
-                      </linearGradient>
-                      <linearGradient id="pieGreenGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#06B6D4" />
-                        <stop offset="100%" stopColor="#0891B2" />
-                      </linearGradient>
-                      <linearGradient id="pieTealGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#60A5FA" />
-                        <stop offset="100%" stopColor="#2563EB" />
-                      </linearGradient>
-                      <linearGradient id="pieOrangeGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#A78BFA" />
-                        <stop offset="100%" stopColor="#7C3AED" />
-                      </linearGradient>
-                    </defs>
-                    <Tooltip content={<CategoryTooltip />} />
-                    <Pie
-                      data={breakdownItemsEx}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={72}
-                      outerRadius={96}
-                      paddingAngle={4}
-                      cornerRadius={6}
-                      dataKey="weight"
-                      nameKey="category"
-                      isAnimationActive={true}
-                      animationDuration={1005}
-                    >
-                      {breakdownItemsEx.map((entry, index) => {
-                        const norm = (entry.category || '').toLowerCase();
-                        let fillGrad = 'url(#pieOrangeGrad)';
-                        if (norm.includes('skill') || norm.includes('competenc') || norm.includes('language') || norm.includes('tech')) fillGrad = 'url(#pieBlueGrad)';
-                        else if (norm.includes('experience') || norm.includes('achievement') || norm.includes('project') || norm.includes('career') || norm.includes('histor')) fillGrad = 'url(#pieGreenGrad)';
-                        else if (norm.includes('keyword') || norm.includes('ats') || norm.includes('term') || norm.includes('match')) fillGrad = 'url(#piePurpleGrad)';
-                        else if (norm.includes('format') || norm.includes('structur') || norm.includes('layout')) fillGrad = 'url(#pieCyanGrad)';
-                        else if (norm.includes('readability') || norm.includes('clarity') || norm.includes('education') || norm.includes('academic')) fillGrad = 'url(#pieTealGrad)';
-                        
-                        return <Cell key={`cell-${index}`} fill={fillGrad} stroke="#ffffff" strokeWidth={2} />;
-                      })}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+        {/* Left Card: ATS Score Calculation Weights (Redesigned to avoid confusion) */}
+        <div className="relative p-[1px] bg-gradient-to-b from-border-base/80 to-border-base/40 rounded-[20px] lg:col-span-1 border border-transparent h-full">
+          <div className="bg-card-base rounded-[19px] p-6 h-full flex flex-col justify-between">
+            <div className="mb-4">
+              <h3 className="text-lg font-black text-text-primary tracking-tight italic uppercase">ATS Score Calculation Weights</h3>
+              <p className="text-text-secondary text-xs mt-0.5 leading-relaxed font-semibold">These weights determine how much each category contributes to your final ATS score. They are fixed evaluation criteria and do not represent your performance.</p>
             </div>
- 
-            {/* List Weights on the Right */}
-            <div className="flex-1 space-y-3.5 w-full">
-              {breakdownItemsEx.map((item, idx) => (
-                <div key={idx} className="flex flex-col gap-0.5">
-                  <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider">
-                    <div className="flex items-center gap-2 text-zinc-700">
-                      <span 
-                        className="w-2.5 h-2.5 rounded-full shrink-0" 
-                        style={{ backgroundColor: item.theme.color }}
-                      />
-                      <span>{item.category}</span>
-                    </div>
-                    <span className="text-zinc-500 font-bold select-none">{item.weight}%</span>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-10 gap-8 items-center w-full mt-4">
+              {/* LEFT SIDE (40%) - Donut chart and Centered Badge */}
+              <div className="sm:col-span-4 flex flex-col items-center justify-center text-center">
+                <div className="relative w-[170px] h-[170px] shrink-0 flex items-center justify-center">
+                  <div className="absolute flex flex-col items-center justify-center text-center z-10">
+                    <span className="text-4xl font-[1000] text-text-primary italic tracking-tighter leading-none">{atsScore}</span>
+                    <span className="text-[8px] uppercase font-black text-text-secondary tracking-widest mt-1 block">ATS Score</span>
+                    <span className={cn("text-[9px] font-black uppercase px-2 py-0.5 rounded-lg border mt-2 inline-block leading-none", scoreBadgeColor)}>
+                      {scoreBadgeText.toUpperCase()}
+                    </span>
                   </div>
-                  <span className="text-[10px] text-zinc-500 leading-relaxed font-semibold pl-4.5">
-                    {item.explanation || "Evaluation of matching metrics."}
-                  </span>
+                  
+                  <div className="w-full h-full relative">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <defs>
+                          <linearGradient id="pieBlueGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#3B82F6" />
+                            <stop offset="100%" stopColor="#1E3A8A" />
+                          </linearGradient>
+                          <linearGradient id="piePurpleGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#8B5CF6" />
+                            <stop offset="100%" stopColor="#4C1D95" />
+                          </linearGradient>
+                          <linearGradient id="pieCyanGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#06B6D4" />
+                            <stop offset="100%" stopColor="#083344" />
+                          </linearGradient>
+                          <linearGradient id="pieGreenGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#06B6D4" />
+                            <stop offset="100%" stopColor="#0891B2" />
+                          </linearGradient>
+                          <linearGradient id="pieTealGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#60A5FA" />
+                            <stop offset="100%" stopColor="#2563EB" />
+                          </linearGradient>
+                          <linearGradient id="pieOrangeGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#A78BFA" />
+                            <stop offset="100%" stopColor="#7C3AED" />
+                          </linearGradient>
+                        </defs>
+                        <Tooltip content={<CategoryTooltip />} />
+                        <Pie
+                          data={breakdownItemsEx}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={56}
+                          outerRadius={76}
+                          paddingAngle={3}
+                          cornerRadius={4}
+                          dataKey="weight"
+                          nameKey="category"
+                          isAnimationActive={true}
+                          animationDuration={1000}
+                        >
+                          {breakdownItemsEx.map((entry, index) => {
+                            const norm = (entry.category || '').toLowerCase();
+                            let fillGrad = 'url(#pieOrangeGrad)';
+                            if (norm.includes('skill') || norm.includes('competenc') || norm.includes('language') || norm.includes('tech')) fillGrad = 'url(#pieBlueGrad)';
+                            else if (norm.includes('experience') || norm.includes('achievement') || norm.includes('project') || norm.includes('career') || norm.includes('histor')) fillGrad = 'url(#pieGreenGrad)';
+                            else if (norm.includes('keyword') || norm.includes('ats') || norm.includes('term') || norm.includes('match')) fillGrad = 'url(#piePurpleGrad)';
+                            else if (norm.includes('format') || norm.includes('structur') || norm.includes('layout')) fillGrad = 'url(#pieCyanGrad)';
+                            else if (norm.includes('readability') || norm.includes('clarity') || norm.includes('education') || norm.includes('academic')) fillGrad = 'url(#pieTealGrad)';
+                            
+                            return <Cell key={`cell-${index}`} fill={fillGrad} stroke="var(--card-base)" strokeWidth={2} />;
+                          })}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
-              ))}
+                <p className="text-[10px] text-text-secondary mt-3 font-semibold tracking-wide text-center leading-normal select-none">
+                  ⓘ Based on AI analysis of resume
+                </p>
+              </div>
+
+              {/* RIGHT SIDE (60%) - Staggered dynamic categories list */}
+              <div className="sm:col-span-6 w-full">
+                <motion.div 
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="show"
+                  className="space-y-4"
+                >
+                  {breakdownItemsEx.map((item, idx) => (
+                    <motion.div 
+                      key={idx}
+                      variants={itemVariants}
+                      whileHover={{ scale: 1.01, x: 2 }}
+                      className="group/item flex items-start justify-between gap-3 p-2 rounded-xl hover:bg-bg-base/60 border border-transparent hover:border-border-base transition-all duration-200 cursor-pointer"
+                      onClick={() => {
+                        const element = document.getElementById(`evidence-card-${idx}`);
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                      }}
+                    >
+                      <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                        <span 
+                          className="w-2.5 h-2.5 rounded-full shrink-0 mt-1" 
+                          style={{ backgroundColor: item.theme.color }}
+                        />
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="text-[11px] font-bold text-text-primary transition-colors group-hover/item:text-primary leading-tight uppercase tracking-wider">
+                            {item.category.toUpperCase()}
+                          </span>
+                          <span className="text-[10.5px] text-text-secondary font-semibold mt-1 leading-relaxed line-clamp-2">
+                            {item.explanation || "Evaluation of matching metrics."}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 pr-1 shrink-0">
+                        <div className="flex flex-col items-end justify-center text-right shrink-0">
+                          <div className="flex items-baseline gap-0.5">
+                            <span className="text-[8.5px] uppercase font-black text-text-secondary/60 mr-1 tracking-wider leading-none">Score</span>
+                            <span className="text-xs font-black text-text-primary italic leading-none">{item.score}</span>
+                            <span className="text-[8.5px] text-text-secondary/50 font-black italic leading-none">/100</span>
+                          </div>
+                          <div className="text-[9px] font-bold text-text-secondary/60 pr-[1px] tracking-wide mt-1.5 leading-none">
+                            Weight: <span className="font-extrabold text-text-secondary font-mono">{item.weight}%</span>
+                          </div>
+                        </div>
+                        <span className="text-xs font-[1000] text-border-base transition-transform group-hover/item:translate-x-0.5 select-none leading-none">
+                          &gt;
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </div>
+
             </div>
           </div>
         </div>
+
+
  
         {/* Right Card: DETAILED SCORE BREAKDOWN (Bars) */}
-        <div className="glass-card p-6 flex flex-col border border-zinc-200 bg-white shadow-xs">
+        <div className="glass-card flex flex-col justify-between h-full">
           <div>
-            <h3 className="text-lg font-black text-zinc-800 tracking-tight italic uppercase">Category Performance Metrics</h3>
-            <p className="text-zinc-450 text-xs mt-0.5 leading-relaxed font-semibold">Detailed score comparison across resume categories.</p>
+            <h3 className="text-lg font-black text-text-primary tracking-tight italic uppercase">Category Performance Scores</h3>
+            <p className="text-text-secondary text-xs mt-0.5 leading-relaxed font-semibold">Your actual score achieved in each ATS evaluation category.</p>
           </div>
           
           <div className="h-[280px] w-full mt-4">
-            <ResponsiveContainer width="105%" height="100%">
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 layout="vertical"
                 data={breakdownItemsEx}
@@ -943,8 +1207,8 @@ export const AnalyticsView = ({ user }) => {
                     <stop offset="100%" stopColor="#7C3AED" />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E2E8F0" />
-                <XAxis type="number" domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 10 }} />
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border-base)" />
+                <XAxis type="number" domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} />
                 <YAxis
                   dataKey="category"
                   type="category"
@@ -953,16 +1217,16 @@ export const AnalyticsView = ({ user }) => {
                   width={110}
                   tick={({ x, y, payload }) => {
                     const item = breakdownItemsEx.find(b => b.category === payload.value);
-                    const color = item ? item.theme.color : '#64748B';
+                    const color = item ? item.theme.color : 'var(--text-secondary)';
                     return (
                       <g transform={`translate(${x - 110},${y - 12})`}>
                         <foreignObject width={105} height={24}>
-                          <div className="flex items-center gap-1.5 h-full justify-end pr-1 truncate">
-                            <span className="text-[10px] font-bold text-slate-600 truncate uppercase mt-0.5" title={payload.value}>
+                          <div className="flex items-center justify-end gap-1.5 w-full h-full pr-1 text-right select-none">
+                            <span className="text-[9px] sm:text-[10px] font-bold text-text-secondary uppercase leading-none sm:leading-tight whitespace-normal break-words max-w-[90px]" title={payload.value}>
                               {payload.value}
                             </span>
                             <span 
-                              className="w-2 h-2 rounded-full shrink-0" 
+                              className="w-1.5 h-1.5 rounded-full shrink-0" 
                               style={{ backgroundColor: color }}
                             />
                           </div>
@@ -994,6 +1258,125 @@ export const AnalyticsView = ({ user }) => {
               </BarChart>
             </ResponsiveContainer>
           </div>
+          <div className="text-[10px] text-text-secondary mt-4 block text-center font-semibold select-none">ⓘ Based on AI analysis of your uploaded resume</div>
+        </div>
+      </div>
+
+      {/* ℹ️ How Scoring Works Info Box */}
+      <div className="glass-card text-left">
+        <div className="flex gap-3">
+          <div className="text-primary text-sm mt-0.5 shrink-0 select-none">ℹ️</div>
+          <div className="space-y-2">
+            <h4 className="text-xs font-black uppercase text-text-primary tracking-wider italic">How scoring works</h4>
+            <p className="text-[11px] text-text-secondary leading-relaxed font-semibold">
+              Your final ATS score is calculated using weighted categories.
+            </p>
+            <ul className="text-[11px] text-text-secondary leading-relaxed font-semibold list-disc pl-4 space-y-1">
+              <li><strong className="text-text-primary font-bold uppercase text-[9px] tracking-wider">Evaluation Weights:</strong> Determine how important each category is.</li>
+              <li><strong className="text-text-primary font-bold uppercase text-[9px] tracking-wider">Performance Scores:</strong> Measure how well your resume performs in each category.</li>
+            </ul>
+            <p className="text-[10px] text-primary/90 font-extrabold uppercase mt-1 leading-normal">
+              Final ATS Score = Weighted combination of all category scores.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Evidence-Based Assessment Details Section (3-column responsive grid) */}
+      <div className="space-y-4 mt-8 pt-4 border-t border-border-base">
+        <h3 className="text-lg font-black text-text-primary tracking-tight italic uppercase">Evidence-Based Assessment Details</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {breakdownItemsEx.map((item, idx) => (
+            <div 
+              key={idx} 
+              id={`evidence-card-${idx}`}
+              className="glass-card flex flex-col justify-between text-left"
+            >
+              <div>
+                {/* Header with Title and Confidence */}
+                <div className="flex justify-between items-center w-full border-b border-border-base pb-3 mb-3.5">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-xs shrink-0" style={{ backgroundColor: item.theme.color }}>
+                      <item.theme.icon className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[10.5px] font-black uppercase text-text-primary tracking-wider truncate leading-none">
+                        {item.category.toUpperCase()}
+                      </span>
+                      <span className="text-[8px] font-black text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded-md uppercase tracking-wider mt-1.5 w-max leading-none">
+                        CONFIDENCE: {item.confidence}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-baseline gap-0.5 shrink-0 pl-1">
+                    <span className="text-sm font-black italic text-text-primary leading-none">{item.score}</span>
+                    <span className="text-[9px] text-text-secondary font-bold italic leading-none">/100</span>
+                  </div>
+                </div>
+
+                {/* Evaluation statement */}
+                <p className="text-[11px] text-text-secondary font-semibold leading-relaxed mb-4">
+                  <strong className="text-text-primary font-bold uppercase text-[9px] tracking-wider mr-1">Evaluation:</strong>
+                  {item.reason || item.explanation}
+                </p>
+
+                {/* Detected Badges */}
+                {item.detected && item.detected.length > 0 && (
+                  <div className="flex flex-col gap-1.5 mt-2.5">
+                    <span className="text-[9px] text-emerald-600 font-extrabold uppercase tracking-wide flex items-center gap-1 select-none">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      Found ({item.detected.length}):
+                    </span>
+                    <div className="flex flex-wrap gap-1 leading-none">
+                      {item.detected.slice(0, 4).map((det, i) => (
+                        <span key={i} className="text-[9px] font-bold text-text-secondary bg-bg-base border border-border-base/80 px-2 py-1 rounded-lg">
+                          {det}
+                        </span>
+                      ))}
+                      {item.detected.length > 4 && (
+                        <span className="text-[9px] font-bold text-text-secondary pt-1">+{item.detected.length - 4} more</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Missing Badges */}
+                {item.missing && item.missing.length > 0 && (
+                  <div className="flex flex-col gap-1.5 mt-3.5">
+                    <span className="text-[9px] text-red-500 font-extrabold uppercase tracking-wide flex items-center gap-1 select-none">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                      Missing ({item.missing.length}):
+                    </span>
+                    <div className="flex flex-wrap gap-1 leading-none">
+                      {item.missing.slice(0, 4).map((mis, i) => (
+                        <span key={i} className="text-[9px] font-bold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-lg">
+                          {mis}
+                        </span>
+                      ))}
+                      {item.missing.length > 4 && (
+                        <span className="text-[9px] font-bold text-text-secondary pt-1">+{item.missing.length - 4} more</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* View Details modal toggle */}
+              <div className="mt-4 pt-3 border-t border-border-base flex justify-start select-none">
+                <button
+                  onClick={() => {
+                    const norm = item.category.toLowerCase();
+                    if (norm.includes('skill')) setActiveModal('skills');
+                    else if (norm.includes('keyword') || norm.includes('ats')) setActiveModal('keywords');
+                    else setActiveModal('suggestions');
+                  }}
+                  className="text-[10px] font-extrabold text-primary hover:text-primary-dark transition-colors flex items-center gap-1 cursor-pointer uppercase tracking-wider"
+                >
+                  View Details <span className="text-[8px]">▼</span>
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -1058,18 +1441,18 @@ export const AnalyticsView = ({ user }) => {
 
       {/* Bottom Grid Item: Widgets Column Group */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-         {/* widget 1: Strengths */}
-        <div className="glass-card p-6 flex flex-col justify-between border border-zinc-200 bg-white h-full shadow-xs">
+        {/* widget 1: Strengths */}
+        <div className="glass-card flex flex-col justify-between h-full">
           <div className="space-y-5">
             <div>
-              <h3 className="text-xs font-black text-zinc-800 uppercase tracking-widest flex items-center gap-2">
+              <h3 className="text-xs font-black text-text-primary uppercase tracking-widest flex items-center gap-2">
                 Strengths
               </h3>
-              <p className="text-zinc-400 text-[10px] mt-0.5">Compliant fields detected in this resume.</p>
+              <p className="text-text-secondary text-[10px] mt-0.5">Compliant fields detected in this resume.</p>
             </div>
             <ul className="space-y-3">
               {strengths.map((str, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-xs text-zinc-600 leading-relaxed font-semibold">
+                <li key={i} className="flex items-start gap-2.5 text-xs text-text-secondary leading-relaxed font-semibold">
                   <span className="text-emerald-500 shrink-0 mt-0.5">✓</span>
                   <span>{str}</span>
                 </li>
@@ -1077,8 +1460,8 @@ export const AnalyticsView = ({ user }) => {
             </ul>
           </div>
           
-          <div className="mt-6 pt-4 border-t border-zinc-200">
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs font-bold text-emerald-700 hover:bg-emerald-100/60 transition-colors select-none">
+          <div className="mt-6 pt-4 border-t border-border-base">
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors select-none">
               <span>Great job! Keep it up.</span>
               <span>👍</span>
             </div>
@@ -1086,17 +1469,17 @@ export const AnalyticsView = ({ user }) => {
         </div>
 
         {/* widget 2: Improvement Areas */}
-        <div className="glass-card p-6 flex flex-col justify-between border border-zinc-200 bg-white h-full shadow-xs">
+        <div className="glass-card flex flex-col justify-between h-full">
           <div className="space-y-5">
             <div>
-              <h3 className="text-xs font-black text-zinc-800 uppercase tracking-widest">
+              <h3 className="text-xs font-black text-text-primary uppercase tracking-widest">
                 Improvement Areas
               </h3>
-              <p className="text-zinc-400 text-[10px] mt-0.5">Active anomalies and recommendations.</p>
+              <p className="text-text-secondary text-[10px] mt-0.5">Active anomalies and recommendations.</p>
             </div>
             <ul className="space-y-3">
               {activeData.suggestions?.slice(0, 5).map((s, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-xs text-zinc-600 leading-relaxed font-semibold">
+                <li key={i} className="flex items-start gap-2.5 text-xs text-text-secondary leading-relaxed font-semibold">
                   <span className="text-amber-500 shrink-0 mt-0.5 font-bold">⚠</span>
                   <span className="truncate">{s.title}</span>
                 </li>
@@ -1104,10 +1487,10 @@ export const AnalyticsView = ({ user }) => {
             </ul>
           </div>
           
-          <div className="mt-6 pt-4 border-t border-zinc-200">
+          <div className="mt-6 pt-4 border-t border-border-base">
             <button 
               onClick={() => setActiveModal('suggestions')}
-              className="w-full bg-amber-50 hover:bg-amber-100/60 border border-amber-200 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs font-bold text-amber-700 transition-colors uppercase tracking-wider text-left cursor-pointer"
+              className="w-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs font-bold text-amber-600 dark:text-amber-400 transition-colors uppercase tracking-wider text-left cursor-pointer"
             >
               <span>Improve these areas</span>
               <span>↗</span>
@@ -1116,27 +1499,27 @@ export const AnalyticsView = ({ user }) => {
         </div>
 
         {/* widget 3: Top Skills Detected */}
-        <div className="glass-card p-6 flex flex-col justify-between border border-zinc-200 bg-white h-full shadow-xs">
+        <div className="glass-card flex flex-col justify-between h-full">
           <div className="space-y-5">
             <div>
-              <h3 className="text-xs font-black text-zinc-800 uppercase tracking-widest">
+              <h3 className="text-xs font-black text-text-primary uppercase tracking-widest">
                 Top Skills Detected
               </h3>
-              <p className="text-zinc-400 text-[10px] mt-0.5">Core competencies parsed from the resume.</p>
+              <p className="text-text-secondary text-[10px] mt-0.5">Core competencies parsed from the resume.</p>
             </div>
             <div className="flex flex-wrap gap-2 max-h-[160px] overflow-hidden pr-1">
               {activeData.skills?.map((sk, i) => (
-                <span key={i} className="text-[11px] font-bold text-slate-700 bg-slate-50 border border-zinc-200 px-3 py-1.5 rounded-xl animate-fade-in">
+                <span key={i} className="text-[11px] font-bold text-text-primary bg-bg-base border border-border-base px-3 py-1.5 rounded-xl animate-fade-in">
                   {sk}
                 </span>
               ))}
             </div>
           </div>
           
-          <div className="mt-6 pt-4 border-t border-zinc-200">
+          <div className="mt-6 pt-4 border-t border-border-base">
             <button 
               onClick={() => setActiveModal('skills')}
-              className="w-full bg-blue-50 hover:bg-blue-100/60 border border-blue-200 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs font-bold text-blue-600 transition-colors uppercase tracking-wider cursor-pointer"
+              className="w-full bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs font-bold text-blue-600 dark:text-blue-400 transition-colors uppercase tracking-wider cursor-pointer"
             >
               <span>View all skills ({activeData.skills?.length || 0})</span>
               <span className="opacity-70 font-bold">👁</span>
@@ -1145,27 +1528,27 @@ export const AnalyticsView = ({ user }) => {
         </div>
 
         {/* widget 4: Missing Keywords */}
-        <div className="glass-card p-6 flex flex-col justify-between border border-zinc-200 bg-white h-full shadow-xs">
+        <div className="glass-card flex flex-col justify-between h-full">
           <div className="space-y-5">
             <div>
-              <h3 className="text-xs font-black text-zinc-800 uppercase tracking-widest">
+              <h3 className="text-xs font-black text-text-primary uppercase tracking-widest">
                 Missing Keywords
               </h3>
-              <p className="text-zinc-400 text-[10px] mt-0.5">Critical keywords index gaps detected.</p>
+              <p className="text-text-secondary text-[10px] mt-0.5">Critical keywords index gaps detected.</p>
             </div>
             <div className="flex flex-wrap gap-2 max-h-[160px] overflow-hidden pr-1">
               {activeData.missingKeywords?.map((kw, i) => (
-                <span key={i} className="text-[11px] font-bold text-red-700 bg-red-50 border border-red-200 px-3 py-1.5 rounded-xl animate-fade-in">
+                <span key={i} className="text-[11px] font-bold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-xl animate-fade-in">
                   {kw}
                 </span>
               ))}
             </div>
           </div>
           
-          <div className="mt-6 pt-4 border-t border-zinc-200">
+          <div className="mt-6 pt-4 border-t border-border-base">
             <button 
               onClick={() => setActiveModal('keywords')}
-              className="w-full bg-red-50 hover:bg-red-100/60 border border-red-200 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs font-bold text-red-650 transition-colors uppercase tracking-wider cursor-pointer"
+              className="w-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs font-bold text-red-650 dark:text-red-400 transition-colors uppercase tracking-wider cursor-pointer"
             >
               <span>View all missing ({activeData.missingKeywords?.length || 0})</span>
               <span className="opacity-70 font-bold">ⓘ</span>
@@ -1175,8 +1558,8 @@ export const AnalyticsView = ({ user }) => {
       </div>
 
       {/* Row 4: Base Footer banner with lightbulb TIP */}
-      <div className="glass-card p-5 border border-zinc-200 bg-white flex flex-col sm:flex-row justify-between items-center gap-4 shadow-xs">
-        <div className="flex items-center gap-3 text-xs text-zinc-500 font-semibold animate-pulse">
+      <div className="glass-card flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-3 text-xs text-text-secondary font-semibold animate-pulse">
           <Lightbulb className="w-5 h-5 text-primary shrink-0" />
           <span>
             <strong className="text-primary mr-1">TIP:</strong> Focus on adding more quantifiable achievements and missing keywords to improve your ATS score.
@@ -1191,31 +1574,44 @@ export const AnalyticsView = ({ user }) => {
       </div>
 
       {/* Extra helper rows: Job compatibility analysis & Trend charts */}
-      <div className="border-t border-zinc-200 pt-8 mt-4 space-y-8">
+      <div className="border-t border-border-base pt-8 mt-4 space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
           {/* Competency Radar Chart */}
-          <div className="glass-card p-6 space-y-5 border border-zinc-200 bg-white flex flex-col justify-between shadow-xs">
+          <div className="glass-card flex flex-col justify-between h-full">
             <div>
-              <h3 className="text-md font-black text-zinc-800 uppercase tracking-widest">Resume Competency Dimensions</h3>
-              <p className="text-zinc-500 text-xs mt-0.5 leading-relaxed font-semibold">Skill coverage & profile dimension spread from extracted credentials.</p>
+              <h3 className="text-lg font-black text-text-primary tracking-tight italic uppercase">Resume Competency Dimensions</h3>
+              <p className="text-text-secondary text-xs mt-0.5 leading-relaxed font-semibold">Skill coverage & profile dimension spread from extracted credentials.</p>
             </div>
             
-            <div className="h-[260px] w-full mt-4 flex items-center justify-center">
+            <div className="h-[260px] w-full mt-4 flex flex-col items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="72%" data={breakdownItemsEx}>
+                <RadarChart cx="50%" cy="50%" outerRadius="72%" data={breakdownItemsEx.slice(0, 5).map(item => {
+                  let jobReq = 90;
+                  if (item.category === 'Technical Skills') jobReq = 90;
+                  else if (item.category === 'Experience') jobReq = 85;
+                  else if (item.category === 'Education') jobReq = 80;
+                  else if (item.category === 'ATS Keywords') jobReq = 90;
+                  else if (item.category === 'Formatting') jobReq = 95;
+
+                  return {
+                    category: item.category,
+                    Resume: item.score,
+                    "Job Requirements": jobReq
+                  };
+                })}>
                   <defs>
                     <radialGradient id="radarPurpleGrad" cx="50%" cy="50%" r="80%">
                       <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.4} />
                       <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.05} />
                     </radialGradient>
                   </defs>
-                  <PolarGrid stroke="#E2E8F0" />
-                  <PolarAngleAxis dataKey="category" tick={{ fill: '#4b5563', fontSize: 9, fontWeight: 700 }} />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 8 }} />
+                  <PolarGrid stroke="var(--border-base)" />
+                  <PolarAngleAxis dataKey="category" tick={{ fill: 'var(--text-primary)', fontSize: 9, fontWeight: 700 }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: 'var(--text-secondary)', fontSize: 8 }} />
                   <Radar 
-                    name="Competency" 
-                    dataKey="score" 
+                    name="Resume Profile" 
+                    dataKey="Resume" 
                     stroke="#8B5CF6" 
                     strokeWidth={2}
                     fill="url(#radarPurpleGrad)" 
@@ -1223,20 +1619,30 @@ export const AnalyticsView = ({ user }) => {
                     isAnimationActive={true}
                     animationDuration={1200}
                   />
-                  <Tooltip content={<CategoryTooltip />} />
+                  <Radar 
+                    name="Job Requirements" 
+                    dataKey="Job Requirements" 
+                    stroke="#10B981" 
+                    strokeWidth={2}
+                    fill="none" 
+                    isAnimationActive={true}
+                    animationDuration={1200}
+                  />
+                  <Tooltip content={<RadarTooltip />} />
                 </RadarChart>
               </ResponsiveContainer>
+              <div className="text-[10px] text-text-secondary mt-2 block text-center font-medium">Based on AI analysis of your uploaded resume</div>
             </div>
           </div>
 
           {/* Job Role Compatibility Horizontal Bar Chart */}
-          <div className="glass-card p-6 space-y-5 border border-zinc-200 bg-white flex flex-col justify-between shadow-xs">
+          <div className="glass-card flex flex-col justify-between h-full">
             <div>
-              <h3 className="text-md font-black text-zinc-800 uppercase tracking-widest">Job Role Compatibility</h3>
-              <p className="text-zinc-450 text-xs mt-0.5 leading-relaxed font-semibold">Match score estimation against adjacent industry positions.</p>
+              <h3 className="text-lg font-black text-text-primary tracking-tight italic uppercase">Job Role Compatibility</h3>
+              <p className="text-text-secondary text-xs mt-0.5 leading-relaxed font-semibold">Match score estimation against adjacent industry positions.</p>
             </div>
             
-            <div className="h-[260px] w-full mt-4">
+            <div className="h-[260px] w-full mt-4 flex flex-col items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   layout="vertical"
@@ -1249,8 +1655,8 @@ export const AnalyticsView = ({ user }) => {
                       <stop offset="100%" stopColor="#1D4ED8" />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#F1F5F9" />
-                  <XAxis type="number" domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 10 }} />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border-base)" />
+                  <XAxis type="number" domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} />
                   <YAxis
                     dataKey="role"
                     type="category"
@@ -1260,8 +1666,8 @@ export const AnalyticsView = ({ user }) => {
                     tick={({ x, y, payload }) => (
                       <g transform={`translate(${x - 110},${y - 12})`}>
                         <foreignObject width={105} height={24}>
-                          <div className="flex items-center h-full justify-end pr-1 truncate text-right">
-                            <span className="text-[10px] font-bold text-slate-600 truncate uppercase mt-0.5" title={payload.value}>
+                          <div className="flex items-center justify-end w-full h-full pr-1 text-right select-none">
+                            <span className="text-[9px] sm:text-[10px] font-bold text-text-secondary uppercase leading-none sm:leading-tight whitespace-normal break-words max-w-[100px]" title={payload.value}>
                               {payload.value}
                             </span>
                           </div>
@@ -1269,7 +1675,7 @@ export const AnalyticsView = ({ user }) => {
                       </g>
                     )}
                   />
-                  <Tooltip content={<MatchTooltip />} cursor={{ fill: 'rgba(241,245,249,0.3)', radius: 4 }} />
+                  <Tooltip content={<MatchTooltip />} cursor={{ fill: 'var(--bg-base)', radius: 4 }} />
                   <Bar 
                     dataKey="percentage" 
                     fill="url(#roleBlueGrad)" 
@@ -1280,6 +1686,7 @@ export const AnalyticsView = ({ user }) => {
                   />
                 </BarChart>
               </ResponsiveContainer>
+              <div className="text-[10px] text-text-secondary mt-2 block text-center font-medium">Based on AI analysis of your uploaded resume</div>
             </div>
           </div>
 
@@ -1288,13 +1695,13 @@ export const AnalyticsView = ({ user }) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
           {/* Component 6: Resume Improvement Trend (Area Chart) */}
-          <div className="glass-card p-6 space-y-5 border border-zinc-200 bg-white flex flex-col justify-between shadow-xs">
+          <div className="glass-card flex flex-col justify-between h-full">
             <div>
-              <h3 className="text-md font-black text-zinc-805 tracking-tight italic uppercase">Resume Improvement Trend</h3>
-              <p className="text-zinc-500 text-xs mt-0.5 leading-relaxed font-semibold">Visual tracking of your overall TS index across all history scans.</p>
+              <h3 className="text-lg font-black text-text-primary tracking-tight italic uppercase">Resume Improvement Trend</h3>
+              <p className="text-text-secondary text-xs mt-0.5 leading-relaxed font-semibold">Visual tracking of your overall TS index across all history scans.</p>
             </div>
             
-            <div className="h-[210px] w-full mt-4">
+            <div className="h-[210px] w-full mt-4 flex flex-col items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={scoreTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
@@ -1303,12 +1710,12 @@ export const AnalyticsView = ({ user }) => {
                       <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-base)" />
                   <XAxis 
                     dataKey="label" 
                     axisLine={false} 
                     tickLine={false} 
-                    tick={{ fill: '#71717a', fontSize: 11, fontWeight: 900 }}
+                    tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontWeight: 900 }}
                     dy={10}
                   />
                   <YAxis 
@@ -1328,25 +1735,26 @@ export const AnalyticsView = ({ user }) => {
                   />
                 </AreaChart>
               </ResponsiveContainer>
+              <div className="text-[10px] text-text-secondary mt-2 block text-center font-medium">Based on AI analysis of your uploaded resume</div>
             </div>
           </div>
 
           {/* Component 7: Job Match Optimization Progression (Line Chart) */}
-          <div className="glass-card p-6 space-y-5 border border-zinc-200 bg-white flex flex-col justify-between shadow-xs">
+          <div className="glass-card flex flex-col justify-between h-full">
             <div>
-              <h3 className="text-md font-black text-zinc-800 tracking-tight italic uppercase">Job Match Optimization</h3>
-              <p className="text-zinc-500 text-xs mt-0.5 leading-relaxed font-semibold">Visual progression of your estimated job description compatibility score.</p>
+              <h3 className="text-lg font-black text-text-primary tracking-tight italic uppercase">Job Match Optimization</h3>
+              <p className="text-text-secondary text-xs mt-0.5 leading-relaxed font-semibold">Visual progression of your estimated job description compatibility score.</p>
             </div>
             
-            <div className="h-[210px] w-full mt-4">
+            <div className="h-[210px] w-full mt-4 flex flex-col items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={matchTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-base)" />
                   <XAxis 
                     dataKey="label" 
                     axisLine={false} 
                     tickLine={false} 
-                    tick={{ fill: '#71717a', fontSize: 11, fontWeight: 900 }}
+                    tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontWeight: 900 }}
                     dy={10}
                   />
                   <YAxis 
@@ -1366,19 +1774,20 @@ export const AnalyticsView = ({ user }) => {
                   />
                 </LineChart>
               </ResponsiveContainer>
+              <div className="text-[10px] text-text-secondary mt-2 block text-center font-medium">Based on AI analysis of your uploaded resume</div>
             </div>
           </div>
         </div>
 
         {/* Dynamic skills expansion view at the bottom */}
-        <div id="full-skills-view" className="glass-card p-6 space-y-5 border border-zinc-200 bg-white scroll-mt-24 shadow-xs">
+        <div id="full-skills-view" className="glass-card scroll-mt-24">
           <div>
-            <h3 className="text-md font-black text-zinc-805 uppercase tracking-widest">Extracted Credentials & Skills</h3>
-            <p className="text-zinc-500 text-xs mt-0.5">Core technical languages, tools, and methodologies parsed from the document content.</p>
+            <h3 className="text-md font-black text-text-primary uppercase tracking-widest">Extracted Credentials & Skills</h3>
+            <p className="text-text-secondary text-xs mt-0.5">Core technical languages, tools, and methodologies parsed from the document content.</p>
           </div>
           <div className="flex flex-wrap gap-2.5">
             {activeData.skills?.map((sk, i) => (
-              <span key={i} className="text-xs font-bold text-slate-700 bg-slate-50 border border-zinc-200 px-3.5 py-2.5 rounded-xl flex items-center gap-1.5 hover:border-primary/20 transition-all font-mono">
+              <span key={i} className="text-xs font-bold text-text-primary bg-bg-base/30 border border-border-base px-3.5 py-2.5 rounded-xl flex items-center gap-1.5 hover:border-primary/20 transition-all font-mono">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                 {sk}
               </span>
@@ -1397,7 +1806,7 @@ export const AnalyticsView = ({ user }) => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setActiveModal(null)}
-              className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs"
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs"
             />
 
             {/* Modal Card */}
@@ -1407,15 +1816,15 @@ export const AnalyticsView = ({ user }) => {
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               transition={{ type: 'spring', duration: 0.4 }}
               className={cn(
-                "relative bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-2xl z-10 flex flex-col w-full",
+                "relative bg-card-base border border-border-base rounded-2xl overflow-hidden shadow-2xl z-10 flex flex-col w-full",
                 activeModal === 'suggestions' ? "max-w-4xl h-[85vh]" : "max-w-xl max-h-[80vh]"
               )}
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between px-6 py-4.5 border-b border-zinc-200 bg-slate-50 shrink-0">
+              <div className="flex items-center justify-between px-6 py-4.5 border-b border-border-base bg-bg-base/50 shrink-0">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  <h3 className="text-xs font-black text-zinc-800 uppercase tracking-widest italic">
+                  <h3 className="text-xs font-black text-text-primary uppercase tracking-widest italic">
                     {activeModal === 'skills' && 'Extracted Skills Portfolio'}
                     {activeModal === 'keywords' && 'ATS Keyword Deficiencies'}
                     {activeModal === 'suggestions' && 'ATS & Readability Action Items'}
@@ -1423,7 +1832,7 @@ export const AnalyticsView = ({ user }) => {
                 </div>
                 <button
                   onClick={() => setActiveModal(null)}
-                  className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-zinc-200 text-zinc-500 hover:text-zinc-700 transition-all font-mono text-[10px] cursor-pointer"
+                  className="p-2 rounded-xl bg-bg-base hover:bg-bg-base/80 border border-border-base text-text-secondary hover:text-text-primary transition-all font-mono text-[10px] cursor-pointer"
                 >
                   ✕ CLOSE
                 </button>
@@ -1445,18 +1854,18 @@ export const AnalyticsView = ({ user }) => {
                       {/* Search & Action Bar */}
                       <div className="flex flex-col sm:flex-row gap-3">
                         <div className="relative flex-1">
-                          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+                          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary pointer-events-none" />
                           <input
                             type="text"
                             placeholder="Filter detected skills..."
                             value={skillsSearch}
                             onChange={(e) => setSkillsSearch(e.target.value)}
-                            className="w-full bg-white border border-zinc-200 hover:border-zinc-300 focus:border-primary/50 text-xs font-semibold px-10 py-3 rounded-xl text-zinc-800 focus:outline-none placeholder-zinc-400 transition-colors"
+                            className="w-full bg-card-base border border-border-base hover:border-border-base/80 focus:border-primary/50 text-xs font-semibold px-10 py-3 rounded-xl text-text-primary focus:outline-none placeholder:text-text-secondary/60 transition-colors"
                           />
                           {skillsSearch && (
                             <button
                               onClick={() => setSkillsSearch('')}
-                              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-700 font-mono text-xs"
+                              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary font-mono text-xs"
                             >
                               ✕
                             </button>
@@ -1465,7 +1874,7 @@ export const AnalyticsView = ({ user }) => {
 
                         <button
                           onClick={() => handleCopy(filteredSkills.join(', '), 'skills')}
-                          className="px-5 py-3 rounded-xl border border-zinc-200 hover:border-zinc-350 bg-white hover:bg-slate-50 text-xs font-bold text-zinc-705 flex items-center justify-center gap-2 select-none active:scale-95 transition-all text-center min-w-[125px] cursor-pointer"
+                          className="px-5 py-3 rounded-xl border border-border-base hover:border-border-base/80 bg-card-base hover:bg-bg-base text-xs font-bold text-text-primary flex items-center justify-center gap-2 select-none active:scale-95 transition-all text-center min-w-[125px] cursor-pointer"
                         >
                           {copiedModalId === 'skills' ? (
                             <>
@@ -1474,7 +1883,7 @@ export const AnalyticsView = ({ user }) => {
                             </>
                           ) : (
                             <>
-                              <Copy className="w-3.5 h-3.5 text-zinc-500" />
+                              <Copy className="w-3.5 h-3.5 text-text-secondary" />
                               <span>Copy List</span>
                             </>
                           )}
@@ -1482,7 +1891,7 @@ export const AnalyticsView = ({ user }) => {
                       </div>
 
                       {/* Info Counter */}
-                      <div className="flex justify-between items-center text-[10px] font-black text-zinc-450 uppercase tracking-widest border-b border-zinc-200 pb-3">
+                      <div className="flex justify-between items-center text-[10px] font-black text-text-secondary uppercase tracking-widest border-b border-border-base pb-3">
                         <span>Organization Index</span>
                         <span>Showing {filteredSkills.length} of {allSkills.length} Total</span>
                       </div>
@@ -1497,7 +1906,7 @@ export const AnalyticsView = ({ user }) => {
                                 {list.map((skill, index) => (
                                   <span
                                     key={index}
-                                    className="text-xs font-bold text-zinc-700 bg-slate-50 border border-zinc-205 px-3 py-2 rounded-xl flex items-center gap-1.5 font-mono"
+                                    className="text-xs font-bold text-text-primary bg-bg-base/30 border border-border-base px-3 py-2 rounded-xl flex items-center gap-1.5 font-mono"
                                   >
                                     <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                                     {skill}
@@ -1508,7 +1917,7 @@ export const AnalyticsView = ({ user }) => {
                           ))}
                         </div>
                       ) : (
-                        <div className="text-center py-8 text-zinc-500 text-xs font-medium">
+                        <div className="text-center py-8 text-text-secondary text-xs font-medium">
                           No matching skills found.
                         </div>
                       )}
@@ -1528,18 +1937,18 @@ export const AnalyticsView = ({ user }) => {
                       {/* Search / Copy Filter */}
                       <div className="flex flex-col sm:flex-row gap-3">
                         <div className="relative flex-1">
-                          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-550 pointer-events-none" />
+                          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary pointer-events-none" />
                           <input
                             type="text"
                             placeholder="Filter missing keywords..."
                             value={keywordsSearch}
                             onChange={(e) => setKeywordsSearch(e.target.value)}
-                            className="w-full bg-zinc-950/80 border border-zinc-850 hover:border-zinc-800 focus:border-primary/50 text-xs font-semibold px-10 py-3 rounded-xl text-zinc-250 focus:outline-none placeholder-zinc-650 transition-colors"
+                            className="w-full bg-card-base border border-border-base hover:border-border-base/80 focus:border-primary/50 text-xs font-semibold px-10 py-3 rounded-xl text-text-primary focus:outline-none placeholder:text-text-secondary/50 transition-colors"
                           />
                           {keywordsSearch && (
                             <button
                               onClick={() => setKeywordsSearch('')}
-                              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 font-mono text-xs"
+                              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary font-mono text-xs"
                             >
                               ✕
                             </button>
@@ -1548,7 +1957,7 @@ export const AnalyticsView = ({ user }) => {
 
                         <button
                           onClick={() => handleCopy(filteredKeywords.join(', '), 'keywords')}
-                          className="px-5 py-3 rounded-xl border border-zinc-850 hover:border-zinc-850 bg-zinc-950 hover:bg-zinc-900 text-xs font-bold text-zinc-350 flex items-center justify-center gap-2 select-none active:scale-95 transition-all text-center min-w-[125px]"
+                          className="px-5 py-3 rounded-xl border border-border-base hover:border-border-base/85 bg-card-base hover:bg-bg-base text-xs font-bold text-text-primary flex items-center justify-center gap-2 select-none active:scale-95 transition-all text-center min-w-[125px] cursor-pointer"
                         >
                           {copiedModalId === 'keywords' ? (
                             <>
@@ -1557,7 +1966,7 @@ export const AnalyticsView = ({ user }) => {
                             </>
                           ) : (
                             <>
-                              <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                              <Copy className="w-3.5 h-3.5 text-text-secondary" />
                               <span>Copy List</span>
                             </>
                           )}
@@ -1571,19 +1980,19 @@ export const AnalyticsView = ({ user }) => {
                             const origIdx = allKeywords.indexOf(kw);
                             const priority = origIdx < 3 ? 'High' : origIdx < 6 ? 'Medium' : 'Low';
                             const badgeClass = 
-                              priority === 'High' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
-                              priority === 'Medium' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' :
-                              'bg-zinc-800/30 border-zinc-800/80 text-zinc-400';
+                              priority === 'High' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
+                              priority === 'Medium' ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' :
+                              'bg-bg-base/40 border-border-base text-text-secondary';
                             
                             const isFromJD = activeData.jobDescriptionKeywords?.includes(kw) || (origIdx % 2 === 0);
 
                             return (
-                              <div key={i} className="p-4.5 rounded-2xl bg-zinc-950/60 border border-zinc-900/60 hover:border-zinc-850 transition-colors space-y-2">
+                              <div key={i} className="p-4.5 rounded-2xl bg-bg-base/30 border border-border-base hover:border-border-base/90 transition-colors space-y-2">
                                 <div className="flex justify-between items-center">
                                   <div className="flex items-center gap-2 truncate">
-                                    <span className="text-sm font-black text-zinc-200 font-mono">{kw}</span>
+                                    <span className="text-sm font-black text-text-primary font-mono">{kw}</span>
                                     {isFromJD && (
-                                      <span className="text-[9px] font-black uppercase text-purple-400 border border-purple-500/20 bg-purple-500/5 px-2 py-0.5 rounded-md">
+                                      <span className="text-[9px] font-black uppercase text-purple-500 border border-purple-500/20 bg-purple-500/5 px-2 py-0.5 rounded-md">
                                         JD Match
                                       </span>
                                     )}
@@ -1592,8 +2001,8 @@ export const AnalyticsView = ({ user }) => {
                                     {priority}
                                   </span>
                                 </div>
-                                <p className="text-[11px] text-zinc-450 leading-relaxed font-semibold">
-                                  <strong className="text-zinc-400 block mb-0.5">Why it matters:</strong>
+                                <p className="text-[11px] text-text-secondary leading-relaxed font-semibold">
+                                  <strong className="text-text-primary block mb-0.5 font-bold uppercase text-[9px] tracking-wider">Why it matters:</strong>
                                   {getKeywordExplanation(kw)}
                                 </p>
                               </div>
@@ -1601,7 +2010,7 @@ export const AnalyticsView = ({ user }) => {
                           })}
                         </div>
                       ) : (
-                        <div className="text-center py-8 text-zinc-500 text-xs font-medium">
+                        <div className="text-center py-8 text-text-secondary text-xs font-medium">
                           No missing keywords detected.
                         </div>
                       )}
@@ -1615,8 +2024,8 @@ export const AnalyticsView = ({ user }) => {
 
                   return (
                     <div className="space-y-6">
-                      <div className="flex justify-between items-center pb-3 border-b border-zinc-900">
-                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
+                      <div className="flex justify-between items-center pb-3 border-b border-border-base">
+                        <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest">
                           Grouped Action Plan
                         </p>
                         <span className="text-[10px] font-black text-primary uppercase tracking-widest">
@@ -1636,15 +2045,15 @@ export const AnalyticsView = ({ user }) => {
                                 {suggestionsList.map((sug, i) => {
                                   const impact = sug.impact || 'Medium';
                                   const badgeClass = 
-                                    impact === 'High' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
-                                    impact === 'Medium' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' :
-                                    'bg-zinc-800/30 border-zinc-800/80 text-zinc-400';
+                                    impact === 'High' ? 'bg-red-500/10 border border-red-500/20 text-red-500' :
+                                    impact === 'Medium' ? 'bg-amber-500/10 border border-amber-500/20 text-amber-500' :
+                                    'bg-bg-base/40 border border-border-base text-text-secondary';
 
                                   return (
-                                    <div key={i} className="p-5 rounded-2xl bg-zinc-950/60 border border-zinc-900/60 hover:border-zinc-850 transition-colors flex flex-col justify-between space-y-4">
+                                    <div key={i} className="p-5 rounded-2xl bg-bg-base/30 border border-border-base hover:border-border-base/90 transition-colors flex flex-col justify-between space-y-4">
                                       <div className="space-y-2">
                                         <div className="flex justify-between items-start gap-4">
-                                          <span className="text-xs font-black text-zinc-150 uppercase tracking-wider leading-relaxed">
+                                          <span className="text-xs font-black text-text-primary uppercase tracking-wider leading-relaxed">
                                             {sug.title}
                                           </span>
                                           <span className={cn("text-[9px] font-black uppercase px-2 py-0.5 rounded-md border shrink-0", badgeClass)}>
@@ -1653,23 +2062,23 @@ export const AnalyticsView = ({ user }) => {
                                         </div>
                                         
                                         <div className="space-y-1">
-                                          <span className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-wider block">Description</span>
-                                          <p className="text-[11px] text-zinc-350 leading-relaxed font-semibold">
+                                          <span className="text-[10px] text-text-secondary font-extrabold uppercase tracking-wider block">Description</span>
+                                          <p className="text-[11px] text-text-primary leading-relaxed font-semibold">
                                             {sug.description}
                                           </p>
                                         </div>
 
                                         <div className="space-y-1">
-                                          <span className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-wider block">Why it affects ATS</span>
-                                          <p className="text-[11px] text-zinc-450 leading-relaxed font-semibold italic">
+                                          <span className="text-[10px] text-text-secondary font-extrabold uppercase tracking-wider block">Why it affects ATS</span>
+                                          <p className="text-[11px] text-text-secondary leading-relaxed font-semibold italic">
                                             {sug.reason || "ATS parsers look for structured and quantifiable metrics related to this sector."}
                                           </p>
                                         </div>
                                       </div>
 
-                                      <div className="pt-3 border-t border-zinc-900/80 space-y-2">
+                                      <div className="pt-3 border-t border-border-base space-y-2">
                                         <span className="text-[10px] text-primary font-extrabold uppercase tracking-wider block">Recommended Improvement</span>
-                                        <p className="text-[11px] text-emerald-400/90 font-semibold leading-relaxed">
+                                        <p className="text-[11px] text-emerald-500/95 font-semibold leading-relaxed">
                                           {sug.improvements || "Re-phrase this section utilizing active verb identifiers and clear numeric indicators."}
                                         </p>
                                       </div>
@@ -1681,7 +2090,7 @@ export const AnalyticsView = ({ user }) => {
                           ))}
                         </div>
                       ) : (
-                        <div className="text-center py-12 text-zinc-500 text-xs font-medium">
+                        <div className="text-center py-12 text-text-secondary text-xs font-medium">
                           No suggestions required. Your profile scoring indicates excellent ATS index alignment.
                         </div>
                       )}

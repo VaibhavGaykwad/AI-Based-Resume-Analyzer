@@ -237,7 +237,7 @@ export const AuthView = () => {
           </div>
 
           {/* Form wrapper with Glassmorphism */}
-          <div className="backdrop-blur-md bg-white/70 border border-slate-200/50 rounded-2xl shadow-xl shadow-slate-100/55 p-8 sm:p-12 w-full relative overflow-hidden">
+          <div className="backdrop-blur-md bg-white/70 border border-slate-200/50 rounded-2xl shadow-xl shadow-slate-100/55 p-6 sm:p-12 w-full relative overflow-hidden">
             <h2 className="text-2xl font-black text-slate-800 mb-2 italic tracking-tight uppercase">
               {isLogin ? 'Personal Access' : 'Create Account'}
             </h2>

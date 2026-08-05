@@ -1,9 +1,32 @@
 @import "tailwindcss";
 
+:root {
+  --primary-accent: #8b5cf6;
+  --primary-accent-dark: #7c3aed;
+  --primary-accent-light: #c084fc;
+  
+  --bg-base: #f7f9fc;
+  --card-base: #ffffff;
+  --border-base: #e5e7eb;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+}
+
+:root[data-theme="dark"] {
+  --bg-base: #0f111a;
+  --card-base: #151926;
+  --border-base: #1e2638;
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+}
+
 @theme {
-  --color-primary: #8b5cf6;
-  --color-primary-dark: #7c3aed;
-  --color-primary-light: #c084fc;
+  --color-primary: var(--primary-accent);
+  --color-primary-dark: var(--primary-accent-dark);
+  --color-primary-light: var(--primary-accent-light);
   
   --color-blue: #3b82f6;
   --color-purple: #8b5cf6;
@@ -12,11 +35,11 @@
   --color-orange: #f59e0b;
   --color-red: #ef4444;
   
-  --color-bg-base: #f7f9fc;
-  --color-card-base: #ffffff;
-  --color-border-base: #e5e7eb;
-  --color-text-primary: #111827;
-  --color-text-secondary: #6b7280;
+  --color-bg-base: var(--bg-base);
+  --color-card-base: var(--card-base);
+  --color-border-base: var(--border-base);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
 
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
@@ -24,29 +47,77 @@
 
 @layer base {
   body {
-    @apply bg-[#f7f9fc] text-[#111827] antialiased;
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    @apply antialiased;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Smooth 200ms transition for colors */
+  div, header, aside, main, section, nav, button, a, span, p, h1, h2, h3, h4, h5, h6, input, textarea, select {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
   }
 }
 
 .glass {
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(12px);
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-base);
+}
+
+:root[data-theme="light"] .glass {
+  background-color: rgba(255, 255, 255, 0.8);
 }
 
 .glass-card {
-  @apply rounded-2xl overflow-hidden transition-all duration-300;
-  background-color: #ffffff;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  border-radius: 1.25rem !important; /* 20px consistent border radius */
+  overflow: hidden;
+  background-color: var(--card-base);
+  border: 1px solid var(--border-base) !important; /* Consistent border opacity */
+  box-shadow: 0 4px 18px -4px rgba(0, 0, 0, 0.02), 0 2px 8px -2px rgba(0, 0, 0, 0.02) !important; /* Subtle lightweight card shadow */
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease, background-color 200ms ease !important; /* 200ms ease transition */
+  transform: translateY(0);
 }
 
 .glass-card:hover {
-  background-color: #ffffff;
-  border-color: #d1d5db;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  background-color: var(--card-base);
+  border-color: var(--primary-accent-light) !important;
+  box-shadow: 0 10px 24px -5px rgba(0, 0, 0, 0.04), 0 4px 8px -4px rgba(0, 0, 0, 0.02) !important; /* Subtle hover shadow */
+  transform: translateY(-3px) !important; /* transform: translateY(-3px) */
 }
+
+/* Enforce identical content padding across standard layout cards */
+.glass-card:not(.no-padding) {
+  padding: 1.5rem !important; /* Identical card padding of 1.5rem (p-6) */
+}
+
+/* Micro-interactions for interactive elements */
+button:not(:disabled),
+a:not(:disabled),
+select,
+input[type="submit"],
+.btn-interactive {
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background-color 200ms, border-color 200ms, box-shadow 200ms;
+}
+
+button:not(:disabled):hover,
+a:not(:disabled):hover,
+select:hover,
+input[type="submit"]:hover,
+.btn-interactive:hover {
+  transform: scale(1.02);
+}
+
+button:not(:disabled):active,
+a:not(:disabled):active,
+select:active,
+input[type="submit"]:active,
+.btn-interactive:active {
+  transform: scale(0.98);
+}
+
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
@@ -54,10 +125,15 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-[#f7f9fc];
+  background-color: var(--bg-base);
 }
 
 ::-webkit-scrollbar-thumb {
   @apply bg-zinc-300 rounded-full hover:bg-zinc-400;
 }
+
+:root[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  @apply bg-zinc-700 hover:bg-zinc-600;
+}
+
 

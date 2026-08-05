@@ -1,22 +1,32 @@
+/* eslint-disable no-unused-vars */
 import React, { useState } from 'react';
 import { jsPDF } from 'jspdf';
 import { refineResume } from '../utils/resumeAnalyzer';
 import { ScoreGauge } from '../components/ScoreGauge';
 import { BadgeList } from '../components/BadgeList';
 import { SuggestionCard } from '../components/SuggestionCard';
-import { Mail, Briefcase, User, Download, Share2, ExternalLink, CheckCircle, Sparkles, Loader2, Target } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Mail, Briefcase, User, Download, Share2, ExternalLink, CheckCircle, Sparkles, Loader2, Target, MessageSquare, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { saveFeedback } from '../utils/firestoreService';
 
-export const ResultsView = ({ data }) => {
+export const ResultsView = ({ data, user }) => {
+  const [appliedSuggestions, setAppliedSuggestions] = useState([]);
+  const [showRefineModal, setShowRefineModal] = useState(false);
+  const [refinedResumeText, setRefinedResumeText] = useState('');
+  const [isRefining, setIsRefining] = useState(false);
+  const [refineError, setRefineError] = useState(null);
+  const [showHelpfulCard, setShowHelpfulCard] = useState(true);
+  const [showToast, setShowToast] = useState(false);
+
   if (!data) {
     return (
-      <div className="max-w-2xl mx-auto py-20 text-center space-y-4 bg-white border border-zinc-200 rounded-3xl shadow-sm">
-        <div className="w-16 h-16 bg-slate-50 border border-zinc-200 rounded-2xl flex items-center justify-center mx-auto text-zinc-400 shadow-xs animate-pulse-slow">
+      <div className="glass-card max-w-2xl mx-auto py-20 text-center space-y-4">
+        <div className="w-16 h-16 bg-bg-base border border-border-base rounded-2xl flex items-center justify-center mx-auto text-text-secondary shadow-xs animate-pulse-slow">
           <Target className="w-8 h-8 text-primary" />
         </div>
         <div className="space-y-1">
-          <p className="text-sm font-bold text-zinc-800 uppercase tracking-wider">No Optimization Selected</p>
-          <p className="text-xs text-zinc-500 max-w-sm mx-auto px-4 leading-relaxed font-semibold">
+          <p className="text-sm font-bold text-text-primary uppercase tracking-wider">No Optimization Selected</p>
+          <p className="text-xs text-text-secondary max-w-sm mx-auto px-4 leading-relaxed font-semibold">
             Please navigate to the History tab and retrieve a prior analysis card to view detailed results.
           </p>
         </div>
@@ -24,11 +34,20 @@ export const ResultsView = ({ data }) => {
     );
   }
 
-  const [appliedSuggestions, setAppliedSuggestions] = useState([]);
-  const [showRefineModal, setShowRefineModal] = useState(false);
-  const [refinedResumeText, setRefinedResumeText] = useState('');
-  const [isRefining, setIsRefining] = useState(false);
-  const [refineError, setRefineError] = useState(null);
+  const handleFeedbackYes = () => {
+    setShowHelpfulCard(false);
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+    }, 3000);
+  };
+
+  const handleFeedbackNo = () => {
+    setShowHelpfulCard(false);
+    window.dispatchEvent(new CustomEvent('open-feedback-modal', { 
+      detail: { subject: 'Resume Analysis' } 
+    }));
+  };
 
   const handleDownload = () => {
     const doc = new jsPDF();
@@ -179,19 +198,19 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
   return (
     <div className="space-y-10 pb-16">
       {/* Header Profile Section */}
-      <div className="glass-card p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-zinc-200 bg-white shadow-sm hover:shadow-md transition-shadow">
-        <div className="flex items-center gap-6">
-          <div className="w-20 h-20 rounded-[1.5rem] bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-3xl font-black text-white shadow-xl shadow-primary/20 uppercase">
+      <div className="glass-card flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-[1.25rem] sm:rounded-[1.5rem] bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-2xl sm:text-3xl font-black text-white shadow-xl shadow-primary/20 uppercase shrink-0">
             {data.name.split(' ').map(n => n[0]).join('')}
           </div>
           <div>
-            <h1 className="text-3xl font-black text-zinc-850 tracking-tight">{data.name}</h1>
-            <div className="flex flex-wrap items-center gap-4 mt-2 text-zinc-500">
+            <h1 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">{data.name}</h1>
+            <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2 sm:gap-4 mt-2 text-text-secondary">
               <div className="flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide">
                 <Briefcase className="w-4 h-4 text-primary" />
                 {data.role}
               </div>
-              <div className="flex items-center gap-1.5 text-sm font-medium border-l border-zinc-200 pl-4">
+              <div className="flex items-center gap-1.5 text-sm font-medium sm:border-l sm:border-border-base sm:pl-4">
                 <Mail className="w-4 h-4 text-primary" />
                 <span className="opacity-70">{data.email}</span>
               </div>
@@ -199,17 +218,17 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <button 
             onClick={handleDownload}
-            className="px-5 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-650 font-bold tracking-widest text-[10px] uppercase hover:bg-slate-50 transition-all flex items-center gap-2.5 cursor-pointer shadow-xs"
+            className="px-5 py-3 rounded-xl border border-border-base bg-card-base text-text-secondary font-bold tracking-widest text-[10px] uppercase hover:bg-bg-base transition-all flex items-center justify-center gap-2.5 cursor-pointer shadow-xs w-full sm:w-auto"
           >
             <Download className="w-4 h-4" />
             Download report
           </button>
           <button 
             onClick={handleShare}
-            className="px-6 py-3 rounded-xl bg-gradient-to-r from-primary to-primary-dark hover:opacity-95 text-white font-extrabold tracking-widest text-[10px] uppercase transition-all shadow-md shadow-primary/20 flex items-center gap-2.5 cursor-pointer"
+            className="px-6 py-3 rounded-xl bg-gradient-to-r from-primary to-primary-dark hover:opacity-95 text-white font-extrabold tracking-widest text-[10px] uppercase transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2.5 cursor-pointer w-full sm:w-auto"
           >
             <Share2 className="w-4 h-4" />
             Share insights
@@ -230,20 +249,20 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
             const secondaryClassification = detectedDomains[1];
 
             return (
-              <div className="glass-card p-8 border border-zinc-200 bg-white flex flex-col gap-6 relative overflow-hidden group shadow-sm hover:shadow-md transition-shadow duration-300">
+              <div className="glass-card flex flex-col gap-6 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
                 
                 <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-xl bg-gradient-to-tr from-blue-50 to-indigo-50 border border-indigo-100 text-indigo-500 shadow-sm shrink-0">
+                  <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-500 shadow-sm shrink-0">
                     <Target className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-zinc-440 tracking-[0.2em] block leading-none mb-1.5">Detected Resume Domain</span>
+                    <span className="text-[10px] uppercase font-bold text-text-secondary tracking-[0.2em] block leading-none mb-1.5">Detected Resume Domain</span>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                      <h4 className="text-xl font-extrabold text-zinc-800 tracking-tight uppercase leading-none">
+                      <h4 className="text-xl font-extrabold text-text-primary tracking-tight uppercase leading-none">
                         {isFallback ? 'General Professional' : primaryClassification.domain}
                       </h4>
-                      <span className="text-[10px] font-bold text-indigo-650 bg-gradient-to-r from-blue-50/60 via-purple-50/60 to-cyan-50/60 border border-purple-100 px-2.5 py-1 rounded-lg shadow-xs select-none">
+                      <span className="text-[10px] font-bold text-indigo-500 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-lg shadow-xs select-none">
                         Confidence: {isFallback ? Math.min(69, primaryClassification.confidence) : primaryClassification.confidence}%
                       </span>
                     </div>
@@ -251,14 +270,14 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
                 </div>
 
                 {secondaryClassification && !isFallback && (
-                  <div className="flex items-center gap-2 text-xs font-bold text-zinc-550 pl-1 border-t border-zinc-100 pt-4">
-                    <span className="text-zinc-400 uppercase text-[9px] tracking-wider leading-none">Secondary Domain:</span>
-                    <span className="text-zinc-700 leading-none">{secondaryClassification.domain}</span>
-                    <span className="text-[10px] font-bold text-indigo-650 bg-gradient-to-r from-indigo-50/60 to-purple-50/60 px-2 py-0.5 rounded-md border border-indigo-100 select-none">({secondaryClassification.confidence}%)</span>
+                  <div className="flex items-center gap-2 text-xs font-bold text-text-secondary pl-1 border-t border-border-base pt-4">
+                    <span className="text-text-secondary/70 uppercase text-[9px] tracking-wider leading-none">Secondary Domain:</span>
+                    <span className="text-text-primary leading-none">{secondaryClassification.domain}</span>
+                    <span className="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20 select-none">({secondaryClassification.confidence}%)</span>
                   </div>
                 )}
 
-                <p className="text-[12px] text-zinc-500 leading-relaxed font-medium">
+                <p className="text-[12px] text-text-secondary leading-relaxed font-medium">
                   {isFallback ? (
                     "This resume's career category could not be classified with high confidence, or spans highly diverse disciplines. Recommendations have fallen back to general ATS layout, spelling grammar, structure, and formatting metrics."
                   ) : (
@@ -270,7 +289,7 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
           })()}
 
           {/* Hero Score Card */}
-          <div className="glass-card p-8 flex flex-col md:flex-row items-center gap-10 bg-white border border-zinc-200 shadow-sm">
+          <div className="glass-card p-5 sm:p-8 flex flex-col md:flex-row items-center gap-6 md:gap-10 shadow-sm">
             <ScoreGauge score={data.score} />
             <div className="flex-1 space-y-5">
               {(() => {
@@ -279,45 +298,45 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
                     return {
                       rank: 'Strong Match',
                       evaluation: 'Recommended',
-                      color: 'text-purple-600',
+                      color: 'text-purple-650 dark:text-purple-400',
                       feedback: (
-                        <>Your resume performs exceptionally well for the <span className="text-purple-600 font-bold italic underline decoration-purple-300 underline-offset-4">{role || 'target'}</span> position. You've demonstrated flawless expertise with perfect ATS compatibility!</>
+                        <>Your resume performs exceptionally well for the <span className="text-purple-600 dark:text-purple-400 font-bold italic underline decoration-purple-300 dark:decoration-purple-800 underline-offset-4">{role || 'target'}</span> position. You've demonstrated flawless expertise with perfect ATS compatibility!</>
                       )
                     };
                   } else if (score >= 80) {
                     return {
                       rank: 'Excellent',
                       evaluation: 'Above Average',
-                      color: 'text-indigo-600',
+                      color: 'text-indigo-650 dark:text-indigo-455',
                       feedback: (
-                        <>Your resume is highly competitive for the <span className="text-indigo-600 font-bold italic underline decoration-indigo-300 underline-offset-4">{role || 'target'}</span> position. You have strong keyword alignment, though there is minor room to optimize your keyword density.</>
+                        <>Your resume is highly competitive for the <span className="text-indigo-600 dark:text-indigo-400 font-bold italic underline decoration-indigo-300 dark:decoration-indigo-800 underline-offset-4">{role || 'target'}</span> position. You have strong keyword alignment, though there is minor room to optimize your keyword density.</>
                       )
                     };
                   } else if (score >= 65) {
                     return {
                       rank: 'Above Average',
                       evaluation: 'Strong Match',
-                      color: 'text-blue-600',
+                      color: 'text-blue-650 dark:text-blue-400',
                       feedback: (
-                        <>Your resume has a solid foundation for the <span className="text-blue-600 font-bold italic underline decoration-blue-300 underline-offset-4">{role || 'target'}</span> position but requires more keyword optimization and structural refinement to consistently pass strict ATS filters.</>
+                        <>Your resume has a solid foundation for the <span className="text-blue-600 dark:text-blue-400 font-bold italic underline decoration-blue-300 dark:decoration-blue-800 underline-offset-4">{role || 'target'}</span> position but requires more keyword optimization and structural refinement to consistently pass strict ATS filters.</>
                       )
                     };
                   } else if (score >= 50) {
                     return {
                       rank: 'Competitive',
                       evaluation: 'Above Average',
-                      color: 'text-orange-500',
+                      color: 'text-orange-500 dark:text-orange-400',
                       feedback: (
-                        <>Your resume needs significant improvement for the <span className="text-orange-500 font-bold italic underline decoration-orange-300 underline-offset-4">{role || 'target'}</span> position. It is likely missing critical keywords or formatting needed to clear ATS screens. Please review the missing gaps below.</>
+                        <>Your resume needs significant improvement for the <span className="text-orange-550 dark:text-orange-400 font-bold italic underline decoration-orange-300 dark:decoration-orange-850 underline-offset-4">{role || 'target'}</span> position. It is likely missing critical keywords or formatting needed to clear ATS screens. Please review the missing gaps below.</>
                       )
                     };
                   } else {
                     return {
                       rank: 'Needs Review',
                       evaluation: 'Competitive',
-                      color: 'text-red-500',
+                      color: 'text-red-500 dark:text-red-400',
                       feedback: (
-                        <>Your resume currently struggles against basic ATS requirements for the <span className="text-red-500 font-bold italic underline decoration-red-350 override-decoration underline-offset-4">{role || 'target'}</span> position. We highly recommend rebuilding based on our targeted suggestions.</>
+                        <>Your resume currently struggles against basic ATS requirements for the <span className="text-red-500 dark:text-red-400 font-bold italic underline decoration-red-350 dark:decoration-red-850 override-decoration underline-offset-4">{role || 'target'}</span> position. We highly recommend rebuilding based on our targeted suggestions.</>
                       )
                     };
                   }
@@ -328,20 +347,20 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
                   <>
                     <div className="flex items-center gap-2">
                       <div className="w-1.5 h-6 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full" />
-                      <h3 className="text-2xl font-extrabold text-zinc-800 uppercase tracking-tighter">Analysis Summary</h3>
+                      <h3 className="text-2xl font-extrabold text-text-primary uppercase tracking-tighter">Analysis Summary</h3>
                     </div>
-                    <p className="text-zinc-650 leading-relaxed font-medium text-sm">
+                    <p className="text-text-secondary leading-relaxed font-medium text-sm">
                       {scoreDetails.feedback}
                     </p>
-                    <div className="flex items-center gap-6 pt-3 border-t border-zinc-100">
+                    <div className="flex items-center gap-6 pt-3 border-t border-border-base">
                       <div className="flex flex-col">
-                        <span className="text-2xl font-black text-zinc-800 tracking-tight">{scoreDetails.rank}</span>
-                        <span className="text-[9px] uppercase font-bold text-zinc-440 tracking-[0.2em] mt-1.5">Candidate Rank</span>
+                        <span className="text-2xl font-black text-text-primary tracking-tight">{scoreDetails.rank}</span>
+                        <span className="text-[9px] uppercase font-bold text-text-secondary tracking-[0.2em] mt-1.5">Candidate Rank</span>
                       </div>
-                      <div className="w-px h-10 bg-zinc-200" />
+                      <div className="w-px h-10 bg-border-base" />
                       <div className="flex flex-col">
                         <span className={`text-2xl font-black tracking-tight ${scoreDetails.color}`}>{scoreDetails.evaluation}</span>
-                        <span className="text-[9px] uppercase font-bold text-zinc-440 tracking-[0.2em] mt-1.5">ATS Evaluation</span>
+                        <span className="text-[9px] uppercase font-bold text-text-secondary tracking-[0.2em] mt-1.5">ATS Evaluation</span>
                       </div>
                     </div>
                   </>
@@ -351,30 +370,78 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
           </div>
 
           {/* Skills Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="glass-card p-8 space-y-5 border border-zinc-200 shadow-sm bg-white">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+            <div className="glass-card space-y-5">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-black text-zinc-800 uppercase tracking-tighter italic">Identified Skills</h3>
+                <h3 className="text-lg font-black text-text-primary uppercase tracking-tighter italic">Identified Skills</h3>
                 <span className="text-[9px] font-black text-primary bg-primary/10 px-2.5 py-1 rounded-lg uppercase tracking-widest border border-primary/20">Found {data.skills.length}</span>
               </div>
               <BadgeList items={data.skills} type="success" />
             </div>
 
-            <div className="glass-card p-8 space-y-5 border border-zinc-200 shadow-sm bg-white">
+            <div className="glass-card space-y-5">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-black text-zinc-800 uppercase tracking-tighter italic">Keyword Gaps</h3>
-                <span className="text-[9px] font-black text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg uppercase tracking-widest border border-amber-200">Missing {data.missingKeywords.length}</span>
+                <h3 className="text-lg font-black text-text-primary uppercase tracking-tighter italic">Keyword Gaps</h3>
+                <span className="text-[9px] font-black text-amber-600 bg-amber-500/10 px-2.5 py-1 rounded-lg uppercase tracking-widest border border-amber-500/20">Missing {data.missingKeywords.length}</span>
               </div>
               <BadgeList items={data.missingKeywords} type="neutral" />
             </div>
           </div>
+
+          {/* Feedback Card */}
+          <AnimatePresence>
+            {showHelpfulCard && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="glass-card relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-4 mt-8"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-xs">
+                    <MessageSquare className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-text-primary uppercase tracking-widest block">Was this analysis helpful?</h4>
+                    <p className="text-[10px] font-semibold text-text-secondary mt-0.5">Let us know if RESUAI met your expectations.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <button
+                    onClick={handleFeedbackYes}
+                    type="button"
+                    className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 shadow-xs"
+                  >
+                    <span>👍</span> <span>Yes</span>
+                  </button>
+                  <button
+                    onClick={handleFeedbackNo}
+                    type="button"
+                    className="px-4 py-2 bg-red-500/10 border border-red-500/20 hover:bg-red-50 hover:text-white text-red-500 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 shadow-xs"
+                  >
+                    <span>👎</span> <span>No</span>
+                  </button>
+                  <div className="w-px h-6 bg-border-base mx-1 hidden sm:block" />
+                  <button
+                    onClick={() => setShowHelpfulCard(false)}
+                    type="button"
+                    className="p-2 border border-border-base hover:bg-bg-base/60 text-text-secondary hover:text-text-primary rounded-xl transition-all cursor-pointer active:scale-95 shadow-xs"
+                    aria-label="Dismiss feedback card"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Suggestions Column */}
         <div className="space-y-8">
           <div className="flex items-center justify-between px-2">
-            <h3 className="text-xl font-extrabold text-zinc-800 tracking-tighter uppercase">Quick Tweaks</h3>
-            <ExternalLink className="w-4 h-4 text-zinc-405" />
+            <h3 className="text-xl font-extrabold text-text-primary tracking-tighter uppercase">Quick Tweaks</h3>
+            <ExternalLink className="w-4 h-4 text-text-secondary" />
           </div>
           <div className="space-y-5">
             {data.suggestions.map((suggestion, idx) => (
@@ -412,7 +479,7 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
             </p>
             <button 
               onClick={handleRefineProfile}
-              className="w-full text-[10px] font-extrabold text-indigo-600 bg-white hover:bg-slate-50 transition-all px-6 py-3 rounded-xl relative z-10 uppercase tracking-[0.2em] shadow-lg shadow-white/5 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              className="w-full text-[10px] font-extrabold text-indigo-500 bg-card-base hover:bg-bg-base border border-border-base transition-all px-6 py-3 rounded-xl relative z-10 uppercase tracking-[0.2em] shadow-lg shadow-white/5 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
               Refine profile
             </button>
@@ -422,17 +489,17 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
 
       {/* Refine Profile Comparison Modal */}
       {showRefineModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 md:p-8">
-          <div className="glass-card w-full max-w-5xl max-h-[90vh] flex flex-col p-6 md:p-8 border border-zinc-200 bg-white relative overflow-hidden shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-3 sm:p-4 md:p-8">
+          <div className="glass-card w-full max-w-5xl max-h-[92vh] sm:max-h-[90vh] flex flex-col p-4 sm:p-6 md:p-8 relative overflow-hidden shadow-2xl">
             
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-zinc-200 pb-4 mb-4">
+            <div className="flex items-center justify-between border-b border-border-base pb-4 mb-4">
               <div>
-                <h3 className="text-2xl font-black text-zinc-800 uppercase tracking-tight italic flex items-center gap-2">
-                  <Sparkles className="w-6 h-6 text-primary animate-pulse" />
-                  Profile Refinement Summary
+                <h3 className="text-xl sm:text-2xl font-black text-text-primary uppercase tracking-tight italic flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 sm:w-6 h-6 text-primary animate-pulse" />
+                  Profile Refinement
                 </h3>
-                <p className="text-zinc-500 text-xs mt-1">
+                <p className="text-text-secondary text-xs mt-1 font-semibold">
                   Comparing original details against the suggestions applied ({appliedSuggestions.length} applied).
                 </p>
               </div>
@@ -441,7 +508,7 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
                   setShowRefineModal(false);
                   setRefinedResumeText('');
                 }}
-                className="w-10 h-10 rounded-full flex items-center justify-center border border-zinc-200 text-zinc-400 hover:text-zinc-700 hover:bg-slate-50 transition-colors font-bold text-lg cursor-pointer"
+                className="w-10 h-10 rounded-full flex items-center justify-center border border-border-base text-text-secondary hover:text-text-primary hover:bg-bg-base transition-colors font-bold text-lg cursor-pointer"
               >
                 ✕
               </button>
@@ -451,17 +518,17 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
             <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[300px] py-2 pr-1">
               
               {/* Original Left Column */}
-              <div className="flex flex-col h-full min-h-[250px] border border-zinc-200 p-5 rounded-2xl bg-slate-50/50">
-                <span className="text-[10px] font-black tracking-widest uppercase text-zinc-400 mb-3 block">
+              <div className="flex flex-col h-full min-h-[250px] border border-border-base p-5 rounded-2xl bg-bg-base/30">
+                <span className="text-[10px] font-black tracking-widest uppercase text-text-secondary mb-3 block">
                   Original Resume Segment
                 </span>
-                <div className="flex-1 overflow-y-auto text-zinc-650 border border-zinc-200 rounded-xl bg-white shadow-xs text-xs leading-relaxed font-mono whitespace-pre-wrap max-h-[350px] p-3">
+                <div className="flex-1 overflow-y-auto text-text-primary border border-border-base bg-card-base shadow-xs text-xs leading-relaxed font-mono whitespace-pre-wrap max-h-[350px] p-3">
                   {data.originalText || "No original copy of resume text available."}
                 </div>
               </div>
 
               {/* Improved Right Column */}
-              <div className="flex flex-col h-full min-h-[250px] border border-zinc-200 p-5 rounded-2xl bg-slate-50/50 relative">
+              <div className="flex flex-col h-full min-h-[250px] border border-border-base p-5 rounded-2xl bg-bg-base/30 relative">
                 <span className="text-[10px] font-black tracking-widest uppercase text-primary mb-3 block">
                   Refined Target Output (AI Generated)
                 </span>
@@ -469,20 +536,20 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
                 {isRefining ? (
                   <div className="flex-1 flex flex-col items-center justify-center gap-3 py-16">
                     <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                    <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest animate-pulse">Running AI Refinement...</span>
+                    <span className="text-xs font-bold text-text-secondary uppercase tracking-widest animate-pulse">Running AI Refinement...</span>
                   </div>
                 ) : refineError ? (
-                  <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center border border-red-500/20 rounded-xl bg-red-500/5 p-4 py-8">
+                  <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center border border-red-500/30 bg-red-500/10 p-4 py-8">
                     <span className="text-red-500 text-xs font-bold font-mono">Error: {refineError}</span>
                     <button 
                       onClick={handleRefineProfile}
-                      className="px-4 py-2 mt-2 bg-zinc-100 hover:bg-zinc-200 text-[10px] font-black uppercase tracking-wider rounded-lg text-zinc-600 border border-zinc-200 transition-colors cursor-pointer"
+                      className="px-4 py-2 mt-2 bg-card-base hover:bg-bg-base text-[10px] font-black uppercase tracking-wider rounded-lg text-text-secondary border border-border-base transition-colors cursor-pointer"
                     >
                       Retry
                     </button>
                   </div>
                 ) : (
-                  <div className="flex-1 overflow-y-auto text-zinc-700 border border-zinc-200 rounded-xl bg-white shadow-xs text-xs leading-relaxed font-mono whitespace-pre-wrap max-h-[350px] p-3">
+                  <div className="flex-1 overflow-y-auto text-text-primary border border-border-base bg-card-base shadow-xs text-xs leading-relaxed font-mono whitespace-pre-wrap max-h-[350px] p-3">
                     {refinedResumeText || "Select tweaks and start refine sequence."}
                   </div>
                 )}
@@ -490,13 +557,13 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
             </div>
 
             {/* Footer Buttons */}
-            <div className="flex justify-end gap-3 border-t border-zinc-200 pt-4 mt-4">
+            <div className="flex justify-end gap-3 border-t border-border-base pt-4 mt-4">
               <button 
                 onClick={() => {
                   setShowRefineModal(false);
                   setRefinedResumeText('');
                 }}
-                className="px-5 py-3 rounded-xl border border-zinc-200 text-zinc-550 font-bold uppercase tracking-widest text-[9px] hover:bg-slate-50 transition-colors cursor-pointer"
+                className="px-5 py-3 rounded-xl border border-border-base text-text-secondary font-bold uppercase tracking-widest text-[9px] hover:bg-bg-base transition-colors cursor-pointer"
               >
                 Close View
               </button>
@@ -537,6 +604,19 @@ Top Suggestion: ${data.suggestions && data.suggestions.length > 0 ? `${data.sugg
           </div>
         </div>
       )}
+
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            className="fixed bottom-6 left-6 z-50 flex items-center gap-2.5 px-4.5 py-3 bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-xl shadow-emerald-500/25"
+          >
+            <CheckCircle className="w-4.5 h-4.5" /> <span>Thank you for your feedback!</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

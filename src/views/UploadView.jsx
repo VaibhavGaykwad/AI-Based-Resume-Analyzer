@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState } from 'react';
 import { UploadZone } from '../components/UploadZone';
 import { ScanningProgress } from '../components/ScanningProgress';
@@ -69,13 +70,13 @@ export const UploadView = ({ onAnalysisComplete, user }) => {
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
-            className="w-full max-w-xl mb-4 flex items-start gap-3 px-4 py-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300 text-sm"
+            className="w-full max-w-xl mb-4 flex items-start gap-3 px-4 py-3 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-600 dark:text-amber-400 text-sm font-semibold"
           >
-            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-amber-400" />
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-amber-500" />
             <span>{saveWarning}</span>
             <button
               onClick={() => setSaveWarning(null)}
-              className="ml-auto text-amber-500 hover:text-amber-300 font-bold text-xs shrink-0"
+              className="ml-auto text-amber-550 hover:text-amber-600 dark:text-amber-405 dark:hover:text-amber-300 font-bold text-xs shrink-0 cursor-pointer"
             >
               ✕
             </button>
@@ -93,11 +94,11 @@ export const UploadView = ({ onAnalysisComplete, user }) => {
             transition={{ duration: 0.4 }}
             className="w-full"
           >
-            <div className="text-center mb-12">
-              <h1 className="text-4xl font-bold text-zinc-800 mb-4 tracking-tight">
+            <div className="text-center mb-6 sm:mb-12 px-4">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary mb-3 sm:mb-4 tracking-tight">
                 Unlock your <span className="text-primary font-black italic">Career Potential</span>
               </h1>
-              <p className="text-zinc-500 text-lg max-w-xl mx-auto">
+              <p className="text-text-secondary text-sm sm:text-base md:text-lg max-w-xl mx-auto font-medium">
                 Upload your resume and let our advanced AI analyze it against industry standards in seconds.
               </p>
             </div>
@@ -133,12 +134,12 @@ export const UploadView = ({ onAnalysisComplete, user }) => {
               <AlertCircle className="w-8 h-8 text-red-500" />
             </div>
             <div className="text-center">
-              <h3 className="text-xl font-bold text-zinc-800 mb-2">Analysis Failed</h3>
-              <p className="text-zinc-500 max-w-sm">{error}</p>
+              <h3 className="text-xl font-bold text-text-primary mb-2">Analysis Failed</h3>
+              <p className="text-text-secondary max-w-sm">{error}</p>
             </div>
             <button
               onClick={() => { setStatus('idle'); setError(null); setUploadedFile(null); }}
-              className="px-6 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 text-zinc-700 font-bold transition-colors cursor-pointer text-sm shadow-xs"
+              className="px-6 py-2.5 rounded-xl bg-card-base hover:bg-bg-base border border-border-base text-text-primary font-bold transition-colors cursor-pointer text-sm shadow-xs"
             >
               Try Again
             </button>

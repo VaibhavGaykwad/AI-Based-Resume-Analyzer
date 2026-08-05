@@ -16,3 +16,18 @@ export async function uploadPDF(file, userId) {
     const snapshot = await uploadBytes(storageRef, file);
     return getDownloadURL(snapshot.ref);
 }
+
+/**
+ * Uploads a screenshot to Firebase Storage.
+ * @param {File} file
+ * @param {string} userId
+ * @returns {Promise<string>}
+ */
+export async function uploadScreenshot(file, userId) {
+    const timestamp = Date.now();
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `feedback/${userId}/${timestamp}_${safeName}`;
+    const storageRef = ref(storage, path);
+    const snapshot = await uploadBytes(storageRef, file);
+    return getDownloadURL(snapshot.ref);
+}
