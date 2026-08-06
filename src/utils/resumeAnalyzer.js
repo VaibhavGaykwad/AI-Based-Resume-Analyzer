@@ -1,3 +1,4 @@
+/* global process */
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Set the worker source using the bundled worker
@@ -25,264 +26,440 @@ export async function extractTextFromPDF(file) {
 }
 
 /**
+ * Detect free-tier errors like credit limits, token limits, and rate limits
+ */
+export function isFreeTierError(status, errorMessage) {
+    const msg = (errorMessage || '').toLowerCase();
+    return status === 402 || 
+           status === 429 || 
+           msg.includes('insufficient credits') || 
+           msg.includes('credits') || 
+           msg.includes('max_tokens') || 
+           msg.includes('fewer max_tokens') || 
+           msg.includes('payment required') || 
+           msg.includes('rate limit') ||
+           msg.includes('too many requests');
+}
+
+const MAX_TOKENS = Number(process.env.OPENROUTER_MAX_TOKENS || 500);
+
+/**
  * Analyzes resume text using either the OpenRouter API or Gemini API and returns structured JSON results.
  */
 export async function analyzeResume(resumeText) {
     const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    const openRouterKey = import.meta.env.VITE_OPENROUTER_API_KEY;
-
+    const openRouterKey = process.env.OPENROUTER_API_KEY || import.meta.env.VITE_OPENROUTER_API_KEY;
     const apiKey = openRouterKey || geminiKey;
 
     if (!apiKey) {
-        throw new Error('Missing VITE_OPENROUTER_API_KEY or VITE_GEMINI_API_KEY in .env file.');
+        throw new Error('AI analysis is temporarily unavailable. Please check API credits or try again later.');
     }
 
     const isOpenRouter = apiKey.startsWith('sk-or-');
 
-    const prompt = `You are an expert resume analyzer and career coach. Analyze the following resume text and return a JSON object with EXACTLY this structure (no extra text, just valid JSON):
-
-{
-  "name": "Full name extracted from resume",
-  "email": "Email from resume or empty string",
-  "role": "The primary job title or target role",
-  "score": <integer 0-100, honest ATS/quality score>,
-  "domain": "Classified domain name",
-  "domainConfidence": "high" | "low",
-  "detectedDomains": [
-    {
-      "domain": "Domain Name",
-      "confidence": <integer 0-100>
+    // Requirement 8: Validate model and fall back to free model if paid
+    let modelName = process.env.OPENROUTER_MODEL || 'openrouter/free';
+    if (isOpenRouter && !modelName.endsWith(':free') && modelName !== 'openrouter/free') {
+        console.warn(`[OpenRouter] Configured model "${modelName}" is paid. Switching to free-tier model.`);
+        modelName = 'openrouter/free';
     }
-  ],
-  "domainWhy": ["Reason 1", "Reason 2", ...],
-  "strengths": ["Strength 1", "Strength 2", ...],
-  "skills": ["skill1", "skill2", ...],
-  "missingKeywords": ["keyword1", "keyword2", ...],
+
+    const prompt = `You are a resume parser. Analyze this resume text and return a valid JSON object.
+CRITICAL: To fit within tight free-tier token limits (500 tokens max), you MUST write extremely short text values:
+- Keep domainWhy and strengths list items under 4 words each.
+- Keep scoreBreakdown explanation and suggestion under 5 words each.
+- Keep suggestions title, description, reason, improvements, originalSection, and improvedSection under 5 words each.
+Failure to keep strings short will result in truncation! Output MUST be under 400 response tokens.
+
+JSON Structure:
+{
+  "name": "Full name",
+  "email": "Email or empty string",
+  "role": "Primary job title",
+  "score": <integer 0-100>,
+  "domain": "Domain Name",
+  "domainConfidence": "high" | "low",
+  "detectedDomains": [{"domain": "Domain Name", "confidence": <0-100>}],
+  "domainWhy": ["Reason 1", "Reason 2"],
+  "strengths": ["Strength 1", "Strength 2"],
+  "skills": ["Skill1", "Skill2"],
+  "missingKeywords": ["Keyword1", "Keyword2"],
   "categoryScores": {
-    "technicalSkills": <integer 0-100>,
-    "experience": <integer 0-100>,
-    "education": <integer 0-100>,
-    "atsKeywords": <integer 0-100>,
-    "formatting": <integer 0-100>,
-    "completeness": <integer 0-100>
+    "technicalSkills": <0-100>,
+    "experience": <0-100>,
+    "education": <0-100>,
+    "atsKeywords": <0-100>,
+    "formatting": <0-100>,
+    "completeness": <0-150>
   },
   "scoreBreakdown": [
     {
       "category": "Category Name",
-      "score": <integer 0-100>,
-      "weight": <integer 0-100 representing contribution percentage to the total final score>,
-      "explanation": "Short AI explanation (1-2 sentences) of how this category was evaluated.",
-      "suggestion": "Recommendation string if score < 75, or null if score >= 75"
+      "score": <0-100>,
+      "weight": <0-100 (sum must be 100)>,
+      "explanation": "Short sentence.",
+      "suggestion": "Short recommendation or null"
     }
   ],
   "suggestions": [
     {
       "id": 1,
-      "title": "Short actionable suggestion title",
-      "description": "Detailed explanation of the suggestion.",
+      "title": "Short title",
+      "description": "Short description.",
       "impact": "High" | "Medium" | "Low",
-      "reason": "Why the issue was detected",
-      "improvements": "Specific improvement points or step-by-step suggestions",
-      "originalSection": "The exact or representative section of the resume affected by the issue",
-      "improvedSection": "Draft of how the section should read after applying the suggestion"
+      "reason": "Why detected",
+      "improvements": "Improvement points",
+      "originalSection": "Original section",
+      "improvedSection": "Draft text"
     }
   ]
 }
 
-Rules:
-- "domain": Classify the resume into exactly one of these domains: Software Engineering, Data Science / AI, Cybersecurity, DevOps, UI/UX Design, Business Analyst, Marketing, Sales, Human Resources, Finance, Accounting, Mechanical Engineering, Civil Engineering, Electrical Engineering, Healthcare, Education, Legal, Operations, Other. If the resume spans multiple domains (e.g. Project Management + Software Engineering), return a combined category (e.g., 'Project Management & Software Engineering') and combine the relevant breakdown categories intelligently. If domain confidence is low, return EXACTLY 'General Professional'.
-- "domainConfidence": Set to 'high' or 'low'. If 'low', the domain must be 'General Professional'.
-- "detectedDomains": Provide an array of objects representing detected domains sorted in descending order of confidence. Each object has keys "domain" (a string naming the career domain) and "confidence" (an integer 0-100). If the resume is multi-disciplinary, include up to 2 domains (primary and secondary). Otherwise return exactly 1 domain in the array. Important rule: If the primary classification's confidence is below 70, you MUST return exactly one domain in the array: {"domain": "General Professional", "confidence": <detected score>}, and then generate generic recommendations instead of domain-specific/technical advice.
-- "domainWhy": Provide between 3 and 5 clear, brief reasons (bullet points) why this domain classification was selected. Base each reason on elements actually found in the resume text (e.g., specific languages, roles, certs, or projects).
-- "strengths": Provide between 3 and 5 positive findings (bullet points) extracted specifically from this resume such as strong leadership, excellent projects, good formatting, or quantified achievements. Never use fixed/canned strengths.
-- "categoryScores": Provide scores between 0 and 100 for each of the keys: "technicalSkills", "experience", "education", "atsKeywords", "formatting", "completeness". Specifically:
-  * "technicalSkills": Evaluation of candidate's technical skills profile.
-  * "experience": Evaluation of candidate's work history and achievements.
-  * "education": Evaluation of candidate's academic background and certifications.
-  * "atsKeywords": Evaluation of candidate's key terms alignment.
-  * "formatting": Evaluation of resume formatting, layout, alignment, and parser readability.
-  * "completeness": Evaluation of essential candidate contact profile sections matching.
-  * Mathematical constraint: The overall "score" of the resume MUST equal: (technicalSkills * 0.25) + (experience * 0.25) + (education * 0.15) + (atsKeywords * 0.15) + (formatting * 0.15) + (completeness * 0.05). Make sure the math is exactly correct, and round the sum to the nearest integer.
-- "scoreBreakdown": Generate a list of category evaluations based on the detected domain. Do NOT use hardcoded fixed categories. Provide between 4 and 6 categories relevant to the career domain. For example:
-  * Software Engineering: Technical Skills, Projects, Programming Languages, ATS Keywords, Experience, Formatting.
-  * Marketing: Marketing Skills, Campaign Experience, Analytics Tools, Communication, ATS Keywords, Formatting.
-  * Human Resources: Recruitment Experience, HR Skills, Communication, Certifications, ATS Keywords, Formatting.
-  * Mechanical Engineering: Technical Skills, CAD/Design Experience, Manufacturing Experience, Projects, ATS Keywords, Formatting.
-  * If the domain is 'General Professional', use exactly these 6 categories: Skills, Experience, Education, ATS Keywords, Formatting, Overall Resume Quality.
-- Mathematical constraints for "scoreBreakdown":
-  * The sum of category weights MUST equal exactly 100.
-  * The overall "score" of the resume MUST equal the sum of (category["score"] * category["weight"] / 100).
-- "skills", "missingKeywords", "suggestions", "scoreBreakdown": MUST be strictly relevant to the detected domain. Never display irrelevant advice (e.g., do NOT suggest programming keywords/skills for HR; do NOT suggest recruitment keywords/skills for Software Engineering; do NOT evaluate AutoCAD for Marketing).
-- "skills": list up to 12 technical/soft skills you found in the resume.
-- "missingKeywords": list 4-7 important keywords/skills relevant to the role that are MISSING from the resume.
-- "suggestions": provide exactly 3 suggestions ranked by impact (High first).
-- "score": be honest. A weak resume should score 40-60. A strong one 75-90.
-- Return ONLY the JSON object, no markdown fences, no explanation.
+Constraints:
+1. domainConfidence: Set to 'high' or 'low'. If 'low', the domain must be 'General Professional'.
+2. detectedDomains: Max 2 domains sorted desc. If primary classification confidence < 70, return exactly one: {"domain": "General Professional", "confidence": <score>}.
+3. categoryScores: overall "score" must equal round(technicalSkills*0.25 + experience*0.25 + education*0.15 + atsKeywords*0.15 + formatting*0.15 + completeness*0.05).
+4. scoreBreakdown: 4 to 6 categories. Weights sum to 100. overall "score" must equal sum of (category.score * category.weight / 100).
+5. suggestions: exactly 3 suggestions ranked by impact (High first).
+6. Output ONLY raw JSON. No markdown wrappers.
 
 Resume Text:
 ---
-${resumeText.slice(0, 8000)}
+${resumeText.slice(0, 4000)}
 ---`;
 
-    let response;
-    if (isOpenRouter) {
-        response = await fetch(
-            'https://openrouter.ai/api/v1/chat/completions',
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`,
-                    'HTTP-Referer': window.location.origin,
-                    'X-Title': 'RESUAI'
-                },
-                body: JSON.stringify({
-                    model: 'google/gemini-2.5-flash',
-                    messages: [
-                        {
-                            role: 'user',
-                            content: prompt
-                        }
-                    ],
-                    temperature: 0.3,
-                    max_tokens: 2000,
-                    response_format: {
-                        type: 'json_object'
+    let currentMaxTokens = MAX_TOKENS;
+    let attempts = 0;
+    const maxAttempts = 2;
+
+    while (attempts < maxAttempts) {
+        attempts++;
+        try {
+            // Dynamically compress output expectations on 400 max_tokens retry
+            let dynamicPrompt = prompt;
+            if (isOpenRouter && currentMaxTokens === 400) {
+                dynamicPrompt += `\nCRITICAL: You MUST keep ALL text fields (like explanation, description, reason, suggestions, originalSection, improvedSection) under 3 words each because output token limit is VERY restricted! Return the JSON in the most minimal skeletal shape possible.`;
+            }
+
+            // Requirement 5: Log (development only) model name, max_tokens, key source
+            if (import.meta.env.DEV && isOpenRouter) {
+                console.group('%c[OpenRouter Request Diagnostics]', 'color: #3b82f6; font-weight: bold;');
+                console.log(`Model name: ${modelName}`);
+                console.log(`max_tokens: ${currentMaxTokens}`);
+                console.log(`API Key source: ${process.env.OPENROUTER_API_KEY ? 'Environment Variable (process.env)' : 'Vite Env'}`);
+                console.groupEnd();
+            }
+
+            let response;
+            if (isOpenRouter) {
+                response = await fetch(
+                    'https://openrouter.ai/api/v1/chat/completions',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`,
+                            'HTTP-Referer': window.location.origin,
+                            'X-Title': 'RESUAI'
+                        },
+                        body: JSON.stringify({
+                            model: modelName,
+                            messages: [
+                                {
+                                    role: 'user',
+                                    content: dynamicPrompt
+                                }
+                            ],
+                            temperature: 0.3,
+                            max_tokens: currentMaxTokens,
+                            response_format: {
+                                type: 'json_object'
+                            }
+                        }),
                     }
-                }),
+                );
+            } else {
+                response = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: dynamicPrompt }] }],
+                            generationConfig: {
+                                temperature: 0.3,
+                                responseMimeType: 'application/json',
+                            },
+                        }),
+                    }
+                );
             }
-        );
-    } else {
-        response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        temperature: 0.3,
-                        responseMimeType: 'application/json',
-                    },
-                }),
+
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                const message = err?.error?.message || `API error: ${response.status}`;
+
+                // Requirement 5: Log developer error details
+                if (import.meta.env.DEV && isOpenRouter) {
+                    console.group('%c[OpenRouter Error Diagnostics]', 'color: #ef4444; font-weight: bold;');
+                    console.log(`HTTP Status: ${response.status}`);
+                    console.log(`Error Response:`, err);
+                    console.groupEnd();
+                }
+
+                if (isOpenRouter && isFreeTierError(response.status, message)) {
+                    if (attempts < maxAttempts) {
+                        console.warn(`[OpenRouter] Free-tier limit error (status ${response.status}): "${message}". Retrying once with max_tokens=400...`);
+                        currentMaxTokens = 400;
+                        continue;
+                    } else {
+                        console.error('[OpenRouter] Free-tier limit error. No retries left.');
+                        return {
+                            success: false,
+                            error: "AI analysis is temporarily unavailable. Please check API credits or try again later."
+                        };
+                    }
+                }
+                throw new Error(message);
             }
-        );
-    }
 
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        const message = isOpenRouter
-            ? (err?.error?.message || `OpenRouter API error: ${response.status}`)
-            : (err?.error?.message || `Gemini API error: ${response.status}`);
-        throw new Error(message);
-    }
+            const data = await response.json();
+            
+            // Log tokens in development mode
+            if (import.meta.env.DEV && isOpenRouter) {
+                const usage = data?.usage;
+                if (usage) {
+                    console.group('%c[OpenRouter Token Usage]', 'color: #8b5cf6; font-weight: bold;');
+                    console.log(`Input Tokens:  ${usage.prompt_tokens ?? 'N/A'}`);
+                    console.log(`Output Tokens: ${usage.completion_tokens ?? 'N/A'}`);
+                    console.log(`Total Tokens:  ${usage.total_tokens ?? 'N/A'}`);
+                    console.groupEnd();
+                }
+            }
 
-    const data = await response.json();
-    let rawText;
-    if (isOpenRouter) {
-        rawText = data?.choices?.[0]?.message?.content;
-    } else {
-        rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    }
+            let rawText;
+            if (isOpenRouter) {
+                if (data?.choices?.[0]?.finish_reason === 'length') {
+                    throw new SyntaxError('OpenRouter response truncated due to output limit.');
+                }
+                rawText = data?.choices?.[0]?.message?.content;
+            } else {
+                rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            }
 
-    if (!rawText) {
-        throw new Error(isOpenRouter ? 'No response from OpenRouter.' : 'No response from Gemini API.');
-    }
+            if (!rawText) {
+                throw new Error(isOpenRouter ? 'No response from OpenRouter.' : 'No response from Gemini API.');
+            }
 
-    // Strip markdown code fences if present
-    const cleaned = rawText.replace(/^```json\s*|```\s*$/g, '').trim();
-    return JSON.parse(cleaned);
+            const cleaned = rawText.replace(/^```json\s*|```\s*$/g, '').trim();
+            try {
+                return JSON.parse(cleaned);
+            } catch (jsonErr) {
+                console.error("[OpenRouter] JSON parsing failed, likely truncated", jsonErr);
+                throw jsonErr; // handled by retry catch block
+            }
+
+        } catch (err) {
+            const status = err.status || 0;
+            const message = err.message || '';
+            
+            // Requirement 5: Log developer error details
+            if (import.meta.env.DEV && isOpenRouter) {
+                console.group('%c[OpenRouter Error Diagnostics - Catch Block]', 'color: #ef4444; font-weight: bold;');
+                console.log(`Error Name: ${err.name}`);
+                console.log(`Error Message: ${err.message}`);
+                console.log(`Raw Error Object:`, err);
+                console.groupEnd();
+            }
+
+            const isTruncationOrFreeTier = isFreeTierError(status, message) || 
+                                           err instanceof SyntaxError || 
+                                           err.name === 'SyntaxError' || 
+                                           message.includes('truncated');
+            
+            if (isOpenRouter && isTruncationOrFreeTier) {
+                if (attempts < maxAttempts) {
+                    console.warn(`[OpenRouter] Call failed: "${message}". Retrying once with max_tokens=400...`);
+                    currentMaxTokens = 400;
+                    continue;
+                } else {
+                    return {
+                        success: false,
+                        error: "AI analysis is temporarily unavailable. Please check API credits or try again later."
+                    };
+                }
+            }
+            throw new Error("AI analysis is temporarily unavailable. Please check API credits or try again later.");
+        }
+    }
 }
 
 export async function refineResume(originalText, appliedSuggestions) {
     const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    const openRouterKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+    const openRouterKey = process.env.OPENROUTER_API_KEY || import.meta.env.VITE_OPENROUTER_API_KEY;
     const apiKey = openRouterKey || geminiKey;
 
     if (!apiKey) {
-        throw new Error('Missing API key in .env file.');
+        throw new Error('AI analysis is temporarily unavailable. Please check API credits or try again later.');
     }
 
     const isOpenRouter = apiKey.startsWith('sk-or-');
     
-    const prompt = `You are a professional resume writer and career coach. Your task is to rewrite a resume by applying a list of chosen improvements/suggestions.
-    
-Original Resume Text:
+    // Requirement 8: Validate model and fall back to free model if paid
+    let modelName = process.env.OPENROUTER_MODEL || 'openrouter/free';
+    if (isOpenRouter && !modelName.endsWith(':free') && modelName !== 'openrouter/free') {
+        console.warn(`[OpenRouter Refinement] Configured model "${modelName}" is paid. Switching to free-tier model.`);
+        modelName = 'openrouter/free';
+    }
+
+    const prompt = `You are a professional resume writer. Rewrite this resume applying these improvements:
+Original Resume:
 ---
 ${originalText}
 ---
 
-Improvements/Suggestions to Apply:
+Improvements to Apply:
 ${appliedSuggestions.map((s, idx) => `
 Suggestion ${idx + 1}: ${s.title}
-- Original version to replace/enrich: ${s.originalSection}
+- Original version to replace: ${s.originalSection}
 - Improved draft/feedback: ${s.improvedSection}
 `).join('\n')}
 
-Rewrite the entire resume to incorporate these improvements. Keep all other sections matching the original resume structure (e.g. Contact, other jobs, education). Ensure the tone is professional, achievement-oriented, and ATS-optimized.
+Rewrite the entire resume to incorporate these improvements. Keep all other sections matching the original resume structure (e.g. Contact, other jobs, education). Ensure the tone is professional, achievement-oriented, and ATS-optimized. Keep length compact.
 Return ONLY the complete, newly refined resume text. Do not add any conversational text, markdown formatting blocks (like \`\`\`text), or introductory/concluding explanations.`;
 
-    let response;
-    if (isOpenRouter) {
-        response = await fetch(
-            'https://openrouter.ai/api/v1/chat/completions',
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`,
-                    'HTTP-Referer': window.location.origin,
-                    'X-Title': 'RESUAI'
-                },
-                body: JSON.stringify({
-                    model: 'google/gemini-2.5-flash',
-                    messages: [
-                        {
-                            role: 'user',
-                            content: prompt
-                        }
-                    ],
-                    temperature: 0.3,
-                    max_tokens: 2500
-                }),
+    let currentMaxTokens = MAX_TOKENS;
+    let attempts = 0;
+    const maxAttempts = 2;
+
+    while (attempts < maxAttempts) {
+        attempts++;
+        try {
+            // Requirement 5: Log (development only) model name, max_tokens, key source
+            if (import.meta.env.DEV && isOpenRouter) {
+                console.group('%c[OpenRouter Refinement Request Diagnostics]', 'color: #3b82f6; font-weight: bold;');
+                console.log(`Model name: ${modelName}`);
+                console.log(`max_tokens: ${currentMaxTokens}`);
+                console.log(`API Key source: ${process.env.OPENROUTER_API_KEY ? 'Environment Variable (process.env)' : 'Vite Env'}`);
+                console.groupEnd();
             }
-        );
-    } else {
-        response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        temperature: 0.3
-                    },
-                }),
+
+            let response;
+            if (isOpenRouter) {
+                response = await fetch(
+                    'https://openrouter.ai/api/v1/chat/completions',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`,
+                            'HTTP-Referer': window.location.origin,
+                            'X-Title': 'RESUAI'
+                        },
+                        body: JSON.stringify({
+                            model: modelName,
+                            messages: [
+                                {
+                                    role: 'user',
+                                    content: prompt
+                                }
+                            ],
+                            temperature: 0.3,
+                            max_tokens: currentMaxTokens
+                        }),
+                    }
+                );
+            } else {
+                response = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: {
+                                temperature: 0.3
+                            },
+                        }),
+                    }
+                );
             }
-        );
-    }
 
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        const message = isOpenRouter
-            ? (err?.error?.message || `OpenRouter API error: ${response.status}`)
-            : (err?.error?.message || `Gemini API error: ${response.status}`);
-        throw new Error(message);
-    }
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                const message = err?.error?.message || `API error: ${response.status}`;
 
-    const data = await response.json();
-    let rawText;
-    if (isOpenRouter) {
-        rawText = data?.choices?.[0]?.message?.content;
-    } else {
-        rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    }
+                // Requirement 5: Log developer error details
+                if (import.meta.env.DEV && isOpenRouter) {
+                    console.group('%c[OpenRouter Refinement Error Diagnostics]', 'color: #ef4444; font-weight: bold;');
+                    console.log(`HTTP Status: ${response.status}`);
+                    console.log(`Error Response:`, err);
+                    console.groupEnd();
+                }
 
-    if (!rawText) {
-        throw new Error('No response from AI writing service.');
-    }
+                if (isOpenRouter && isFreeTierError(response.status, message)) {
+                    if (attempts < maxAttempts) {
+                        console.warn(`[OpenRouter Refinement] Free-tier limit error (status ${response.status}): "${message}". Retrying once with max_tokens=400...`);
+                        currentMaxTokens = 400;
+                        continue;
+                    } else {
+                        throw new Error("AI analysis is temporarily unavailable. Please check API credits or try again later.");
+                    }
+                }
+                throw new Error(message);
+            }
 
-    return rawText.replace(/^```[a-zA-Z]*\s*|```\s*$/g, '').trim();
+            const data = await response.json();
+            
+            // Log tokens in development mode
+            if (import.meta.env.DEV && isOpenRouter) {
+                const usage = data?.usage;
+                if (usage) {
+                    console.group('%c[OpenRouter Token Usage - Refine]', 'color: #8b5cf6; font-weight: bold;');
+                    console.log(`Input Tokens:  ${usage.prompt_tokens ?? 'N/A'}`);
+                    console.log(`Output Tokens: ${usage.completion_tokens ?? 'N/A'}`);
+                    console.log(`Total Tokens:  ${usage.total_tokens ?? 'N/A'}`);
+                    console.groupEnd();
+                }
+            }
+
+            let rawText;
+            if (isOpenRouter) {
+                rawText = data?.choices?.[0]?.message?.content;
+            } else {
+                rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            }
+
+            if (!rawText) {
+                throw new Error('No response from AI writing service.');
+            }
+
+            return rawText.replace(/^```[a-zA-Z]*\s*|```\s*$/g, '').trim();
+
+        } catch (err) {
+            const status = err.status || 0;
+            const message = err.message || '';
+
+            // Requirement 5: Log developer error details
+            if (import.meta.env.DEV && isOpenRouter) {
+                console.group('%c[OpenRouter Refinement Error Diagnostics - Catch Block]', 'color: #ef4444; font-weight: bold;');
+                console.log(`Error Name: ${err.name}`);
+                console.log(`Error Message: ${err.message}`);
+                console.log(`Raw Error Object:`, err);
+                console.groupEnd();
+            }
+
+            if (isOpenRouter && isFreeTierError(status, message)) {
+                if (attempts < maxAttempts) {
+                    console.warn(`[OpenRouter Refinement] Call failed: "${message}". Retrying once with max_tokens=400...`);
+                    currentMaxTokens = 400;
+                    continue;
+                } else {
+                    throw new Error("AI analysis is temporarily unavailable. Please check API credits or try again later.");
+                }
+            }
+            throw new Error("AI analysis is temporarily unavailable. Please check API credits or try again later.");
+        }
+    }
 }
 

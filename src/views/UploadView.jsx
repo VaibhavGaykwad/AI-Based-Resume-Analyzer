@@ -36,6 +36,11 @@ export const UploadView = ({ onAnalysisComplete, user }) => {
       // Step 1-5: Extract text and run Gemini analysis
       const text = await extractTextFromPDF(uploadedFile);
       const results = await analyzeResume(text);
+
+      if (results && results.success === false) {
+        throw new Error(results.error || 'OpenRouter free-tier limit reached. Please try again later.');
+      }
+
       const processingTime = parseFloat(((Date.now() - startTime) / 1000).toFixed(1));
 
       const resultsWithContext = { ...results, originalText: text, processingTime };
